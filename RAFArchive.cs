@@ -44,10 +44,6 @@ namespace RAFlib_Plus
     {
         private string rafPath = "";
         /// <summary>
-        /// List of all files that aren't compressed
-        /// </summary>
-        private string[] nocompress = null;
-        /// <summary>
         /// Magic value used to identify the file type, must be 0x18BE0EF0
         /// </summary>
         UInt32 magic = 0;
@@ -70,11 +66,6 @@ namespace RAFlib_Plus
         {
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
             Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
-
-            // Get and set the nocompress files
-            nocompress = Properties.Resources.nocompress.Split("\n");
-            for (int i = 0; i < nocompress.Length; i++)
-                nocompress[i] = nocompress[i].ToLower();
 
             this.rafPath = rafPath;
 
@@ -247,9 +238,11 @@ namespace RAFlib_Plus
                 datFileStream.Seek(0, SeekOrigin.End);
                 UInt32 offset = (UInt32)datFileStream.Length;
 
-                // If it isn't in the nocompress list, compress it
+                FileInfo fInfo = new FileInfo(fileName);
+
+                // .fsb, .fev, and .gfx files aren't compressed
                 byte[] finalContent;
-                if (nocompress.Contains(fileName))
+                if (fInfo.Extension == ".fsb" || fInfo.Extension == ".fev" || fInfo.Extension == ".gfx")
                 {
                     finalContent = content;
                 }
@@ -287,9 +280,11 @@ namespace RAFlib_Plus
                     datFileStream.Seek(0, SeekOrigin.End);
                     UInt32 offset = (UInt32)datFileStream.Length;
 
-                    // If it isn't in the nocompress list, compress it
+                    FileInfo fInfo = new FileInfo(fileName);
+
+                    // .fsb, .fev, and .gfx files aren't compressed
                     byte[] finalContent;
-                    if (nocompress.Contains(fileName))
+                    if (fInfo.Extension == ".fsb" || fInfo.Extension == ".fev" || fInfo.Extension == ".gfx")
                     {
                         finalContent = content;
                     }

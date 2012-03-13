@@ -59,33 +59,5 @@ namespace RAFlib_Plus.Properties {
                 resourceCulture = value;
             }
         }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to data/menu/target.gfx
-        ///data/menu/hudchat.gfx
-        ///data/menu/ingamescoreboard.gfx
-        ///data/menu/endgameresults.gfx
-        ///data/menu/uihighlight.gfx
-        ///data/menu/tooltips.gfx
-        ///data/menu/messagebox.gfx
-        ///data/menu/hudcenter.gfx
-        ///data/sounds/fmod/defaultcategories.fev
-        ///data/menu/hud2test2.gfx
-        ///data/menu/channelbar.gfx
-        ///data/menu/fonts_ch.gfx
-        ///data/menu/targetbar.gfx
-        ///data/menu/tiptracker.gfx
-        ///data/menu/hud2x.gfx
-        ///data/menu/hud2b.gfx
-        ///data/menu/scoreboard.gfx
-        ///data/menu/hudleft.gfx
-        ///data/menu/map.gfx
-        ///data/menu/minimapframe.gfx        /// [rest of string was truncated]&quot;;.
-        /// </summary>
-        internal static string nocompress {
-            get {
-                return ResourceManager.GetString("nocompress", resourceCulture);
-            }
-        }
     }
 }
