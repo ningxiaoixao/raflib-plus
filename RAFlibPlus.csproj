@@ -8,8 +8,8 @@
     <ProjectGuid>{BDF8E31B-A461-41A7-8361-07F10B40AD4F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>RAFlib_Plus</RootNamespace>
-    <AssemblyName>RAFlib-Plus</AssemblyName>
+    <RootNamespace>RAFlibPlus</RootNamespace>
+    <AssemblyName>RAFlibPlus</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

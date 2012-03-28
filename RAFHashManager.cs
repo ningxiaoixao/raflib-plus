@@ -37,7 +37,7 @@ using System.IO;
 
 using ItzWarty;
 
-namespace RAFlib_Plus
+namespace RAFlibPlus
 {
     /// <summary>
     /// Manages the handling of hashes for RAF Strings, which is calculated in an unknown

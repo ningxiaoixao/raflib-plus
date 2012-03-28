@@ -38,9 +38,9 @@ using zlib = ComponentAce.Compression.Libs.zlib;
 using System.Threading;
 using System.Globalization;
 
-namespace RAFlib_Plus
+namespace RAFlibPlus
 {
-    class RAFArchive
+    public class RAFArchive
     {
         private string rafPath = "";
         /// <summary>
@@ -134,6 +134,14 @@ namespace RAFlib_Plus
         {
             All, 
             End
+        }
+
+        public Dictionary<String, RAFFileListEntry> FileDict
+        {
+            get
+            {
+                return this.fileDict;
+            }
         }
 
         /// <summary>

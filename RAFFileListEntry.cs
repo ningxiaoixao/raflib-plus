@@ -38,9 +38,9 @@ using zlib = ComponentAce.Compression.Libs.zlib;
 using System.Threading;
 using System.Globalization;
 
-namespace RAFlib_Plus
+namespace RAFlibPlus
 {
-    class RAFFileListEntry
+    public class RAFFileListEntry
     {
         private RAFArchive raf = null;
 
@@ -208,6 +208,15 @@ namespace RAFlib_Plus
                 //return BitConverter.ToUInt32(directoryFileContent, (int)offsetEntry);
             }
         }
-
+        /// <summary>
+        /// Returns the corresponding RAFArchive of this entry
+        /// </summary>
+        public RAFArchive RAFArchive
+        {
+            get
+            {
+                return raf;
+            }
+        }
     }
 }
