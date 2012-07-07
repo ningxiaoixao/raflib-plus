@@ -128,7 +128,7 @@ namespace RAFlibPlus
                 return fileDict[path];
             else
                 return null;
-        }
+        }        
 
         public enum RAFSearchType
         {
@@ -226,6 +226,7 @@ namespace RAFlibPlus
 
             return returnVal;
         }
+
         /// <summary>
         /// Insert a file into the .dat and updates memory of the new location. 
         /// You HAVE to rebuild the .raf file after you finish all the inserts. 
@@ -335,8 +336,7 @@ namespace RAFlibPlus
         public void SaveRAFFile()
         {
             //Calls to bitconverter were avoided until the end... just to make code prettier
-
-            List<RAFFileListEntry> fileListEntries = this.GetListFromFileDict();
+            int dictLength = this.fileDict.Count;
 
             List<UInt32> result = new List<UInt32>();
             //Header
@@ -349,20 +349,20 @@ namespace RAFlibPlus
             result.Add(
                 (UInt32)(
                        5 * 4 + 4 + /*file list offset and entry itself*/
-                       4 * 4 * fileListEntries.Count /* Size of all entries total */
+                       4 * 4 * dictLength /* Size of all entries total */
                 )//Offset to string table
             );
 
             //File List Header
-            result.Add((UInt32)fileListEntries.Count); //F
+            result.Add((UInt32)dictLength); //F
 
             {   //File List Entries
                 UInt32 i = 0;
-                foreach (RAFFileListEntry entry in fileListEntries)
+                foreach (KeyValuePair<String, RAFFileListEntry> entry in this.fileDict)
                 {
-                    result.Add(entry.StringNameHash);
-                    result.Add(entry.FileOffset);
-                    result.Add(entry.FileSize);
+                    result.Add(entry.Value.StringNameHash);
+                    result.Add(entry.Value.FileOffset);
+                    result.Add(entry.Value.FileSize);
                     result.Add(i++);
                 }
             }
@@ -371,21 +371,21 @@ namespace RAFlibPlus
             //String table Header.
             int stringTableHeader_SizeOffset = result.Count; //We will store this value later...
             result.Add(1337); //This value will be changed later to reflect the size of the string table
-            result.Add((UInt32)fileListEntries.Count);  //# strings in table
+            result.Add((UInt32)dictLength);  //# strings in table
 
             //UInt32[] offsets = new UInt32[fileListEntries.Count]; //Stores offsets for entries
 
             //Set currentOffset to point to where our strings will be stored
-            UInt32 currentOffset = 4 * 2 /*StringTableHeader Size*/ + (UInt32)(4 * 2 * fileListEntries.Count);
+            UInt32 currentOffset = 4 * 2 /*StringTableHeader Size*/ + (UInt32)(4 * 2 * dictLength);
 
             List<byte> stringTableContent = new List<byte>();
             //Insert entry, add filename to our string name bytes
-            foreach (RAFFileListEntry entry in fileListEntries)
+            foreach (KeyValuePair<String, RAFFileListEntry> entry in this.fileDict)
             {
                 result.Add(currentOffset); //offset to this string
-                result.Add((UInt32)entry.FileName.Length + 1);
-                currentOffset += (UInt32)entry.FileName.Length + 1;
-                stringTableContent.AddRange(Encoding.ASCII.GetBytes(entry.FileName));
+                result.Add((UInt32)entry.Value.FileName.Length + 1);
+                currentOffset += (UInt32)entry.Value.FileName.Length + 1;
+                stringTableContent.AddRange(Encoding.ASCII.GetBytes(entry.Value.FileName));
                 stringTableContent.Add(0);
             }
             
@@ -401,11 +401,6 @@ namespace RAFlibPlus
             }
             Array.Copy(stringTableContent.ToArray(), 0, resultOutput, result.Count * 4, stringTableContent.Count);
             File.WriteAllBytes(this.rafPath, resultOutput);
-        }
-
-        private List<RAFFileListEntry> GetListFromFileDict()
-        {
-            return new List<RAFFileListEntry>(fileDict.Values);
         }
 
         #endregion // RAF Editing
