@@ -59,7 +59,15 @@ namespace RAFlibPlus
 
         // Byte array to hold the contents of the .raf file
         byte[] content = null;
-        Dictionary<String, RAFFileListEntry> fileDict = null;
+
+        /// <summary>
+        /// Dictionary with the full path of the RAF entry as the key
+        /// </summary>
+        Dictionary<String, RAFFileListEntry> fileDictFull = null;
+        /// <summary>
+        /// Dictionary with just the file name as the key
+        /// </summary>
+        Dictionary<String, List<RAFFileListEntry>> fileDictShort = null;
 
         // Constructor
         public RAFArchive(string rafPath)
@@ -82,8 +90,9 @@ namespace RAFlibPlus
             //UINT32 is casted to INT32.  This should be fine, since i doubt that the RAF will become
             //a size of 2^31-1 in bytes.
 
-            this.fileDict = new Dictionary<String, RAFFileListEntry>();
-            createFileDict(this, offsetFileList, offsetStringTable);
+            this.fileDictFull = new Dictionary<String, RAFFileListEntry>();
+            this.fileDictShort = new Dictionary<String, List<RAFFileListEntry>>();
+            createFileDicts(this, offsetFileList, offsetStringTable);
         }
 
         /// <summary>
@@ -106,7 +115,7 @@ namespace RAFlibPlus
 
         #region FileDict functions
 
-        private void createFileDict(RAFArchive raf, UInt32 offsetFileList, UInt32 offsetStringTable)
+        private void createFileDicts(RAFArchive raf, UInt32 offsetFileList, UInt32 offsetStringTable)
         {
             //The file list starts with a uint stating how many files we have
             UInt32 fileListCount = BitConverter.ToUInt32(content.SubArray((Int32)offsetFileList, 4), 0);
@@ -117,15 +126,21 @@ namespace RAFlibPlus
             for (UInt32 currentOffset = offsetFileList; currentOffset < offsetFileList + 16 * fileListCount; currentOffset += 16)
             {
                 RAFFileListEntry entry = new RAFFileListEntry(raf, ref raf.content, currentOffset, offsetStringTable);
-                raf.fileDict.Add(entry.FileName, entry);
+                raf.fileDictFull.Add(entry.FileName, entry);
+
+                FileInfo fi = new FileInfo(entry.FileName);
+                if (!raf.fileDictShort.ContainsKey(fi.Name))
+                    raf.fileDictShort.Add(fi.Name, new List<RAFFileListEntry> { entry });
+                else
+                    raf.fileDictShort[fi.Name].Add(entry);
             }
         }
 
-        public RAFFileListEntry GetFileEntry(string path)
+        public RAFFileListEntry GetFileEntry(string fullPath)
         {
-            string lowerPath = path.ToLower();
-            if (this.fileDict.ContainsKey(path))
-                return fileDict[path];
+            string lowerPath = fullPath.ToLower();
+            if (this.fileDictFull.ContainsKey(fullPath))
+                return fileDictFull[fullPath];
             else
                 return null;
         }        
@@ -136,11 +151,19 @@ namespace RAFlibPlus
             End
         }
 
-        public Dictionary<String, RAFFileListEntry> FileDict
+        public Dictionary<String, RAFFileListEntry> FileDictFull
         {
             get
             {
-                return this.fileDict;
+                return this.fileDictFull;
+            }
+        }
+
+        public Dictionary<String, List<RAFFileListEntry>> FileDictShort
+        {
+            get
+            {
+                return this.fileDictShort;
             }
         }
 
@@ -159,7 +182,7 @@ namespace RAFlibPlus
             string lowerPath = partialPath.ToLower();
             List<RAFFileListEntry> result = new List<RAFFileListEntry>();
 
-            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDict)
+            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDictFull)
             {
                 string lowerFilename = entryKVP.Value.FileName.ToLower();
                 if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPath))
@@ -189,7 +212,7 @@ namespace RAFlibPlus
             string lowerPath = partialPath.ToLower();
             List<RAFFileListEntry> result = new List<RAFFileListEntry>();
 
-            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDict)
+            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDictFull)
             {
                 string lowerFilename = entryKVP.Value.FileName.ToLower();
                 if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPath))
@@ -269,7 +292,7 @@ namespace RAFlibPlus
                 datFileStream.Write(finalContent, 0, finalContent.Length);
 
                 // Add to the string dict
-                UInt32 strTableIndex = (UInt32)fileDict.Count;
+                UInt32 strTableIndex = (UInt32)fileDictFull.Count;
                 // Create a virtual RAFFileEntry
                 CreateFileEntry(fileName, offset, (UInt32)finalContent.Length, strTableIndex);
 
@@ -329,14 +352,19 @@ namespace RAFlibPlus
         private RAFFileListEntry CreateFileEntry(string rafPath, UInt32 offset, UInt32 fileSize, UInt32 nameStringTableIndex)
         {
             RAFFileListEntry result = new RAFFileListEntry(this, rafPath, offset, fileSize, nameStringTableIndex);
-            this.fileDict.Add(result.FileName, result);
+            this.fileDictFull.Add(result.FileName, result);
+            FileInfo fi = new FileInfo(result.FileName);
+            if (!this.fileDictShort.ContainsKey(fi.Name))
+                this.fileDictShort.Add(fi.Name, new List<RAFFileListEntry> { result });
+            else
+                this.fileDictShort[fi.Name].Add(result);
             return result;
         }
 
         public void SaveRAFFile()
         {
             //Calls to bitconverter were avoided until the end... just to make code prettier
-            int dictLength = this.fileDict.Count;
+            int dictLength = this.fileDictFull.Count;
 
             List<UInt32> result = new List<UInt32>();
             //Header
@@ -358,7 +386,7 @@ namespace RAFlibPlus
 
             {   //File List Entries
                 UInt32 i = 0;
-                foreach (KeyValuePair<String, RAFFileListEntry> entry in this.fileDict)
+                foreach (KeyValuePair<String, RAFFileListEntry> entry in this.fileDictFull)
                 {
                     result.Add(entry.Value.StringNameHash);
                     result.Add(entry.Value.FileOffset);
@@ -380,7 +408,7 @@ namespace RAFlibPlus
 
             List<byte> stringTableContent = new List<byte>();
             //Insert entry, add filename to our string name bytes
-            foreach (KeyValuePair<String, RAFFileListEntry> entry in this.fileDict)
+            foreach (KeyValuePair<String, RAFFileListEntry> entry in this.fileDictFull)
             {
                 result.Add(currentOffset); //offset to this string
                 result.Add((UInt32)entry.Value.FileName.Length + 1);
