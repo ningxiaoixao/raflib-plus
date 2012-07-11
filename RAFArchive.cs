@@ -196,6 +196,13 @@ namespace RAFlibPlus
             }
             return result;
         }
+
+        public struct RAFSearchResult
+        {
+            public int searchPhraseIndex;
+            public RAFFileListEntry value;
+        }
+
         /// <summary>
         /// Finds file entries.
         /// 
@@ -204,27 +211,59 @@ namespace RAFlibPlus
         /// SearchType.End returns any entries whose filepath ends with the search string.
         /// Ie: /ezreal_tx_cm.dds would return /DATA/Characters/Ezreal/Ezreal_TX_CM.dds
         /// </summary>
-        /// <param name="path">Path to </param>
-        /// <param name="search">Search type</param>
-        /// <returns></returns>
-        public List<RAFFileListEntry> SearchFileEntries(string partialPath, RAFSearchType searchType)
+        public List<RAFFileListEntry> SearchFileEntries(String searchPhrase, RAFSearchType searchType)
         {
-            string lowerPath = partialPath.ToLower();
-            List<RAFFileListEntry> result = new List<RAFFileListEntry>();
+            string lowerPhrase = searchPhrase.ToLower();
+            List<RAFFileListEntry> results = new List<RAFFileListEntry>();
+
+            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDictFull)
+            {
+                String lowerFilename = entryKVP.Value.FileName.ToLower();
+                if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
+                {
+                    results.Add(entryKVP.Value);
+                }
+                else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
+                {
+                    results.Add(entryKVP.Value);
+                }
+            }
+            return results;
+        }
+
+        /// <summary>
+        /// Overloaded for simultaneous multiple searches.
+        /// Returns a struct with the found RAFFileListEntry and the index of the search phrase that triggered it.
+        /// </summary>
+        public List<RAFSearchResult> SearchFileEntries(String[] searchPhrases, RAFSearchType searchType)
+        {
+            List<RAFSearchResult> results = new List<RAFSearchResult>();
 
             foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDictFull)
             {
                 string lowerFilename = entryKVP.Value.FileName.ToLower();
-                if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPath))
+                for (int i = 0; i < searchPhrases.Length; i++)
                 {
-                    result.Add(entryKVP.Value);
-                }
-                else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPath))
-                {
-                    result.Add(entryKVP.Value);
+                    String lowerPhrase = searchPhrases[i].ToLower();
+                    if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
+                    {
+                        RAFSearchResult result;
+                        result.searchPhraseIndex = i;
+                        result.value = entryKVP.Value;
+                        results.Add(result);
+                        break;
+                    }
+                    else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
+                    {
+                        RAFSearchResult result;
+                        result.searchPhraseIndex = i;
+                        result.value = entryKVP.Value;
+                        results.Add(result);
+                        break;
+                    }
                 }
             }
-            return result;
+            return results;
         }
 
         #endregion // FileDict functions
