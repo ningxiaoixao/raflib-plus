@@ -175,21 +175,21 @@ namespace RAFlibPlus
         /// </summary>
         /// <param name="path">Path to </param>
         /// <returns></returns>
-        public List<RAFFileListEntry> SearchFileEntries(string partialPath)
+        public List<RAFFileListEntry> SearchFileEntries(string searchPhrase)
         {
             RAFSearchType searchType = RAFSearchType.All;
 
-            string lowerPath = partialPath.ToLower();
+            string lowerPhrase = searchPhrase.ToLower();
             List<RAFFileListEntry> result = new List<RAFFileListEntry>();
 
             foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDictFull)
             {
                 string lowerFilename = entryKVP.Value.FileName.ToLower();
-                if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPath))
+                if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
                 {
                     result.Add(entryKVP.Value);
                 }
-                else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPath))
+                else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
                 {
                     result.Add(entryKVP.Value);
                 }
