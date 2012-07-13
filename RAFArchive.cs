@@ -126,11 +126,11 @@ namespace RAFlibPlus
             for (UInt32 currentOffset = offsetFileList; currentOffset < offsetFileList + 16 * fileListCount; currentOffset += 16)
             {
                 RAFFileListEntry entry = new RAFFileListEntry(raf, ref raf.content, currentOffset, offsetStringTable);
-                raf.fileDictFull.Add(entry.FileName, entry);
+                raf.fileDictFull.Add(entry.FileName.ToLower(), entry);
 
                 FileInfo fi = new FileInfo(entry.FileName);
                 if (!raf.fileDictShort.ContainsKey(fi.Name))
-                    raf.fileDictShort.Add(fi.Name, new List<RAFFileListEntry> { entry });
+                    raf.fileDictShort.Add(fi.Name.ToLower(), new List<RAFFileListEntry> { entry });
                 else
                     raf.fileDictShort[fi.Name].Add(entry);
             }
