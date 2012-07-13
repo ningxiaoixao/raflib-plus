@@ -46,28 +46,28 @@ namespace RAFlibPlus
         /// <summary>
         /// Magic value used to identify the file type, must be 0x18BE0EF0
         /// </summary>
-        UInt32 magic = 0;
+        private UInt32 magic = 0;
         /// <summary>
         /// // Version of the archive format, must be 1
         /// </summary>
-        UInt32 version = 0;
+        private UInt32 version = 0;
         /// <summary>
         /// An index that is used by the runtime, do not modify
         /// Have no idea what this really does, at the moment...
         /// </summary>
-        UInt32 mgrIndex = 0;
+        private UInt32 mgrIndex = 0;
 
         // Byte array to hold the contents of the .raf file
-        byte[] content = null;
+        private byte[] content = null;
 
         /// <summary>
         /// Dictionary with the full path of the RAF entry as the key
         /// </summary>
-        Dictionary<String, RAFFileListEntry> fileDictFull = null;
+        private Dictionary<String, RAFFileListEntry> fileDictFull = null;
         /// <summary>
         /// Dictionary with just the file name as the key
         /// </summary>
-        Dictionary<String, List<RAFFileListEntry>> fileDictShort = null;
+        private Dictionary<String, List<RAFFileListEntry>> fileDictShort = null;
 
         // Constructor
         public RAFArchive(string rafPath)

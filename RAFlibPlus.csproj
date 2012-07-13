@@ -56,6 +56,7 @@
     <Compile Include="RAFArchive.cs" />
     <Compile Include="RAFFileListEntry.cs" />
     <Compile Include="RAFHashManager.cs" />
+    <Compile Include="RAFMasterFileList.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
