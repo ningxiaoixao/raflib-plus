@@ -182,7 +182,7 @@ namespace RAFlibPlus
         #region Helper functions
 
         // Searches each folder inside the base directory for .raf files, ignoring any sub-directories
-        private List<String> getRAFFiles(String baseDir)
+        public List<String> getRAFFiles(String baseDir)
         {
             String[] folders = Directory.GetDirectories(baseDir);
 

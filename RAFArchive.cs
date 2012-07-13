@@ -129,25 +129,25 @@ namespace RAFlibPlus
                 raf.fileDictFull.Add(entry.FileName.ToLower(), entry);
 
                 FileInfo fi = new FileInfo(entry.FileName);
-                if (!raf.fileDictShort.ContainsKey(fi.Name))
+                if (!raf.fileDictShort.ContainsKey(fi.Name.ToLower()))
                     raf.fileDictShort.Add(fi.Name.ToLower(), new List<RAFFileListEntry> { entry });
                 else
-                    raf.fileDictShort[fi.Name].Add(entry);
+                    raf.fileDictShort[fi.Name.ToLower()].Add(entry);
             }
         }
 
-        public RAFFileListEntry GetFileEntry(string fullPath)
+        private RAFFileListEntry GetFileEntry(string fullPath)
         {
             string lowerPath = fullPath.ToLower();
             if (this.fileDictFull.ContainsKey(fullPath))
                 return fileDictFull[fullPath];
             else
                 return null;
-        }        
+        }
 
         public enum RAFSearchType
         {
-            All, 
+            All,
             End
         }
 
@@ -433,7 +433,7 @@ namespace RAFlibPlus
                     result.Add(i++);
                 }
             }
-            
+
 
             //String table Header.
             int stringTableHeader_SizeOffset = result.Count; //We will store this value later...
@@ -455,7 +455,7 @@ namespace RAFlibPlus
                 stringTableContent.AddRange(Encoding.ASCII.GetBytes(entry.Value.FileName));
                 stringTableContent.Add(0);
             }
-            
+
             //Update string table header with size of all data
             result[stringTableHeader_SizeOffset] = currentOffset;
 
@@ -472,6 +472,6 @@ namespace RAFlibPlus
 
         #endregion // RAF Editing
 
-        
+
     }
 }
