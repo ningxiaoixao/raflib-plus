@@ -190,7 +190,10 @@ namespace RAFlibPlus
 
             foreach (String folder in folders)
             {
-                returnFiles.AddRange(Directory.GetFiles(folder, "*.raf", SearchOption.TopDirectoryOnly));
+                String[] files = Directory.GetFiles(folder, "*.raf", SearchOption.TopDirectoryOnly);
+                if (files.Length > 1)
+                    throw new System.InvalidOperationException("Multiple RAF files found within specific archive folder.\nPlease delete your " + baseDir + "folder and repair your client");
+                returnFiles.AddRange(files);
             }
             return returnFiles;
         }
