@@ -73,10 +73,10 @@ namespace RAFlibPlus
         /// <summary>
         /// Creates an entry that only exists in memory.  
         /// </summary>
-        public RAFFileListEntry(RAFArchive raf, string rafPath, UInt32 offsetDatFile, UInt32 fileSize, UInt32 nameStringTableIndex)
+        public RAFFileListEntry(RAFArchive raf, string fileName, UInt32 offsetDatFile, UInt32 fileSize)
         {
             this.raf = raf;
-            this.fileName = rafPath;
+            this.fileName = fileName;
             this.fileOffset = offsetDatFile;
             this.fileSize = fileSize;
         }
@@ -216,6 +216,73 @@ namespace RAFlibPlus
             get
             {
                 return raf;
+            }
+        }
+
+        public bool ReplaceContent(byte[] content)
+        {
+            // Open the .dat file
+            FileStream datFileStream = new FileStream(this.RAFArchive.RAFFilePath + ".dat", FileMode.Open);
+
+            bool returnVal = replaceContentHelperFunc(content, datFileStream);
+
+            // Close the steam since we're done with it
+            datFileStream.Close();
+
+            return returnVal;
+        }
+
+        public bool ReplaceContent(byte[] content, FileStream datFileStream)
+        {
+            return replaceContentHelperFunc(content, datFileStream);
+        }
+
+        private bool replaceContentHelperFunc(byte[] content, FileStream datFileStream)
+        {
+            // Store the old offsets just in case we need to perform a restore.
+            // This actually isn't necessary currently, since the raf directory file is saved after packing.
+            UInt32 oldOffset = (UInt32)this.FileOffset;
+            UInt32 oldSize = (UInt32)this.FileSize;
+
+            try
+            {
+                // Navigate to the end of it
+                datFileStream.Seek(0, SeekOrigin.End);
+                UInt32 offset = (UInt32)datFileStream.Length;
+
+                FileInfo fInfo = new FileInfo(fileName);
+
+                // .fsb, .fev, and .gfx files aren't compressed
+                byte[] finalContent;
+                if (fInfo.Extension == ".fsb" || fInfo.Extension == ".fev" || fInfo.Extension == ".gfx")
+                {
+                    finalContent = content;
+                }
+                else
+                {
+                    // Start of compression
+                    MemoryStream mStream = new MemoryStream();
+                    zlib.ZOutputStream oStream = new zlib.ZOutputStream(mStream, zlib.zlibConst.Z_DEFAULT_COMPRESSION); //using default compression level
+                    oStream.Write(content, 0, content.Length);
+                    oStream.finish();
+                    finalContent = mStream.ToArray();
+                }
+
+                // Write the data to the end of the .dat file
+                datFileStream.Write(finalContent, 0, finalContent.Length);
+
+                // Update entry values to represent the new changes
+                this.FileOffset = offset;
+                this.FileSize = (UInt32)finalContent.Length;
+
+                return true;
+            }
+            catch (Exception)
+            {
+                this.FileOffset = oldOffset;
+                this.FileSize = oldSize;
+
+                return false;
             }
         }
     }

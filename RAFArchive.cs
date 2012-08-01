@@ -276,12 +276,12 @@ namespace RAFlibPlus
         /// If you are inserting lots of files, supply a FileStream to the .dat file to increase performance. 
         /// Just remember to close the stream after all the inserts.
         /// </summary>
-        public bool InsertFile(string fileName, byte[] content)
+        public bool InsertFile(string fileName, byte[] content, bool createNewIfNoExist = false)
         {
             // Open the .dat file
             FileStream datFileStream = new FileStream(this.rafPath + ".dat", FileMode.Open);
 
-            bool returnVal = insertFileHelperFunc(fileName, content, datFileStream);
+            bool returnVal = insertFileHelperFunc(fileName, content, datFileStream, createNewIfNoExist);
 
             // Close the steam since we're done with it
             datFileStream.Close();
@@ -295,102 +295,34 @@ namespace RAFlibPlus
         /// If you are inserting many files, supply a FileStream to the .dat file to increase performance. 
         /// Just remember to close the stream after all the inserts.
         /// </summary>
-        public bool InsertFile(string fileName, byte[] content, FileStream datFileStream)
+        public bool InsertFile(string fileName, byte[] content, FileStream datFileStream, bool createNewIfNoExist = false)
         {
-            return insertFileHelperFunc(fileName, content, datFileStream);
+            return insertFileHelperFunc(fileName, content, datFileStream, createNewIfNoExist);
         }
 
-        private bool insertFileHelperFunc(string fileName, byte[] content, FileStream datFileStream)
+        private bool insertFileHelperFunc(string fileName, byte[] content, FileStream datFileStream, bool createNewIfNoExist = false)
         {
-            RAFFileListEntry fileentry = this.GetFileEntry(fileName);
-            if (fileentry == null)
+            RAFFileListEntry fileEntry = this.GetFileEntry(fileName);
+            // File exists in archive
+            if (fileEntry != null)
             {
-                // Navigate to the end of it
-                datFileStream.Seek(0, SeekOrigin.End);
-                UInt32 offset = (UInt32)datFileStream.Length;
-
-                FileInfo fInfo = new FileInfo(fileName);
-
-                // .fsb, .fev, and .gfx files aren't compressed
-                byte[] finalContent;
-                if (fInfo.Extension == ".fsb" || fInfo.Extension == ".fev" || fInfo.Extension == ".gfx")
-                {
-                    finalContent = content;
-                }
-                else
-                {
-                    // Start of compression
-                    MemoryStream mStream = new MemoryStream();
-                    zlib.ZOutputStream oStream = new zlib.ZOutputStream(mStream, zlib.zlibConst.Z_DEFAULT_COMPRESSION); //using default compression level
-                    oStream.Write(content, 0, content.Length);
-                    oStream.finish();
-                    finalContent = mStream.ToArray();
-                }
-
-                // Write the data to the end of the .dat file
-                datFileStream.Write(finalContent, 0, finalContent.Length);
-
-                // Add to the string dict
-                UInt32 strTableIndex = (UInt32)fileDictFull.Count;
-                // Create a virtual RAFFileEntry
-                CreateFileEntry(fileName, offset, (UInt32)finalContent.Length, strTableIndex);
-
-                return true;
+                return fileEntry.ReplaceContent(content, datFileStream);
             }
-            else
+            // Create a new file if specified
+            else if (createNewIfNoExist)
             {
-                //store the old offsets just in case we need to perform a restore.
-                //This actually isn't necessary currently, since the raf directory file is saved
-                //After packing.
-                UInt32 oldOffset = (UInt32)fileentry.FileOffset;
-                UInt32 oldSize = (UInt32)fileentry.FileSize;
-
-                try
-                {
-                    // Navigate to the end of it
-                    datFileStream.Seek(0, SeekOrigin.End);
-                    UInt32 offset = (UInt32)datFileStream.Length;
-
-                    FileInfo fInfo = new FileInfo(fileName);
-
-                    // .fsb, .fev, and .gfx files aren't compressed
-                    byte[] finalContent;
-                    if (fInfo.Extension == ".fsb" || fInfo.Extension == ".fev" || fInfo.Extension == ".gfx")
-                    {
-                        finalContent = content;
-                    }
-                    else
-                    {
-                        // Start of compression
-                        MemoryStream mStream = new MemoryStream();
-                        zlib.ZOutputStream oStream = new zlib.ZOutputStream(mStream, zlib.zlibConst.Z_DEFAULT_COMPRESSION); //using default compression level
-                        oStream.Write(content, 0, content.Length);
-                        oStream.finish();
-                        finalContent = mStream.ToArray();
-                    }
-
-                    // Write the data to the end of the .dat file
-                    datFileStream.Write(finalContent, 0, finalContent.Length);
-
-                    // Update entry values to represent the new changes
-                    fileentry.FileOffset = offset;
-                    fileentry.FileSize = (UInt32)finalContent.Length;
-
-                    return true;
-                }
-                catch (Exception)
-                {
-                    fileentry.FileOffset = oldOffset;
-                    fileentry.FileSize = oldSize;
-
-                    return false;
-                }
+                // Create a virtual RAFFileEntry using dummy offsets and filesize
+                fileEntry = CreateFileEntry(fileName, 0, 0);
+                return fileEntry.ReplaceContent(content, datFileStream);
             }
+
+            return false;
+            
         }
 
-        private RAFFileListEntry CreateFileEntry(string rafPath, UInt32 offset, UInt32 fileSize, UInt32 nameStringTableIndex)
+        private RAFFileListEntry CreateFileEntry(string rafPath, UInt32 offset, UInt32 fileSize)
         {
-            RAFFileListEntry result = new RAFFileListEntry(this, rafPath, offset, fileSize, nameStringTableIndex);
+            RAFFileListEntry result = new RAFFileListEntry(this, rafPath, offset, fileSize);
             this.fileDictFull.Add(result.FileName, result);
             FileInfo fi = new FileInfo(result.FileName);
             if (!this.fileDictShort.ContainsKey(fi.Name))
