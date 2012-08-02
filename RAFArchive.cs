@@ -136,7 +136,7 @@ namespace RAFlibPlus
             }
         }
 
-        private RAFFileListEntry GetFileEntry(string fullPath)
+        public RAFFileListEntry GetFileEntry(string fullPath)
         {
             string lowerPath = fullPath.ToLower();
             if (this.fileDictFull.ContainsKey(fullPath))

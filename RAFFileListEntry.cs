@@ -219,6 +219,12 @@ namespace RAFlibPlus
             }
         }
 
+        /// <summary>
+        /// Replace the content of the RAFFileListEntry and update memory of this new data 
+        /// You HAVE to rebuild the .raf file after you finish all the inserts. 
+        /// If you are inserting many files, supply a FileStream to the .dat file to increase performance. 
+        /// Just remember to close the stream after all the inserts.
+        /// </summary>
         public bool ReplaceContent(byte[] content)
         {
             // Open the .dat file
@@ -232,6 +238,12 @@ namespace RAFlibPlus
             return returnVal;
         }
 
+        /// <summary>
+        /// Replace the content of the RAFFileListEntry and update memory of this new data 
+        /// You HAVE to rebuild the .raf file after you finish all the inserts. 
+        /// If you are inserting many files, supply a FileStream to the .dat file to increase performance. 
+        /// Just remember to close the stream after all the inserts.
+        /// </summary>
         public bool ReplaceContent(byte[] content, FileStream datFileStream)
         {
             return replaceContentHelperFunc(content, datFileStream);
