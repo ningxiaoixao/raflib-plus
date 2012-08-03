@@ -56,7 +56,7 @@ namespace RAFlibPlus
         /// </summary>
         /// <param name="raf">Pointer to the owning RAFArchive</param>
         /// <param name="directoryFileContent">Pointer to the content of the .raf.dat file</param>
-        /// <param name="offsetDirectoryEntry">Offset to where the entry data offsets begin</param>
+        /// <param name="offsetDirectoryEntry">Offset to the entry data offsets</param>
         /// <param name="offsetStringTable">Offset to the entry's file name</param>
         public RAFFileListEntry(RAFArchive raf, ref byte[] directoryFileContent, UInt32 offsetDirectoryEntry, UInt32 offsetStringTable)
         {
@@ -80,8 +80,12 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// Creates an entry that only exists in memory.  
+        /// A class that represents a file within an RAF archive. Creates an entry that only exists in memory.
         /// </summary>
+        /// <param name="raf">Pointer to the owning RAFArchive</param>
+        /// <param name="fileName">Full path of the file, ie. DATA/Characters/Ahri/Ahri.skn</param>
+        /// <param name="offsetDatFile">Offset to the entry data offsets</param>
+        /// <param name="fileSize">Length of the file in bytes</param>
         public RAFFileListEntry(RAFArchive raf, string fileName, UInt32 offsetDatFile, UInt32 fileSize)
         {
             this.raf = raf;
@@ -91,7 +95,7 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// Returns the content of the actual file (extracts from raf archive)
+        /// Returns the content of the file
         /// </summary>
         public byte[] GetContent()
         {
@@ -106,8 +110,10 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// Returns the content of the actual file (extracts from raf archive)
+        /// Returns the content of the file
         /// </summary>
+        /// <param name="fStream">FileStream to the RAF .dat file</param>
+        /// <returns></returns>
         public byte[] GetContent(FileStream fStream)
         {
             return getContentHelperFunc(fStream);
@@ -143,7 +149,7 @@ namespace RAFlibPlus
 
         /// <summary>
         /// Returns the raw, still compressed, contents of the file. 
-        /// Doesn't really have a use, but included from old version
+        /// Doesn't really have a use, but included from old RAFlib
         /// </summary>
         /// <returns></returns>
         public byte[] GetRawContent()
@@ -161,7 +167,7 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// Filename of the entry within the RAF archive
+        /// Filename of the entry
         /// </summary>
         public String FileName
         {
@@ -176,7 +182,7 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// Offset to the start of the archived file in the data file
+        /// Offset to the start of the archived file in the .dat file
         /// </summary>
         public UInt32 FileOffset
         {
@@ -211,11 +217,11 @@ namespace RAFlibPlus
             get
             {
                 return RAFHashManager.GetHash(FileName);
-                //return BitConverter.ToUInt32(directoryFileContent, (int)offsetEntry);
             }
         }
+
         /// <summary>
-        /// Returns the corresponding RAFArchive of this entry
+        /// Returns the entry's corresponding RAFArchive
         /// </summary>
         public RAFArchive RAFArchive
         {
@@ -227,8 +233,10 @@ namespace RAFlibPlus
 
         /// <summary>
         /// Replace the content of the RAFFileListEntry and update memory of this new data.
-        /// You HAVE to call &lt;RAFArchive&gt;.SaveRAFFile() after you finish all the inserts. 
+        /// You HAVE to call &lt;RAFArchive&gt;.SaveRAFFile() after you finish all the inserts.
         /// </summary>
+        /// <param name="content">Content to overwrite the previous file data</param>
+        /// <returns></returns>
         public bool ReplaceContent(byte[] content)
         {
             // Open the .dat file
@@ -244,8 +252,11 @@ namespace RAFlibPlus
 
         /// <summary>
         /// Replace the content of the RAFFileListEntry and update memory of this new data.
-        /// You HAVE to call &lt;RAFArchive&gt;.SaveRAFFile() after you finish all the inserts. 
+        /// You HAVE to call &lt;RAFArchive&gt;.SaveRAFFile() after you finish all the inserts.
         /// </summary>
+        /// <param name="content">Content to overwrite the previous file data</param>
+        /// <param name="datFileStream">FileStream to the RAF .dat file</param>
+        /// <returns></returns>
         public bool ReplaceContent(byte[] content, FileStream datFileStream)
         {
             return replaceContentHelperFunc(content, datFileStream);

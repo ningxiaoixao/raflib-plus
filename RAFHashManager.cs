@@ -45,6 +45,11 @@ namespace RAFlibPlus
     /// </summary>
     public static class RAFHashManager
     {
+        /// <summary>
+        /// Get the hash of a entry file name
+        /// </summary>
+        /// <param name="s">Entry file name</param>
+        /// <returns></returns>
         public static UInt32 GetHash(string s)
         {
             //if (hashes == null) Init();

@@ -119,14 +119,17 @@ namespace RAFlibPlus
         #region Searching
 
         /// <summary>
-        /// SearchType.All returns any entries whose filepath contains the search string.
-        /// Ie: /ahri/ would return DATA/Characters/Ahri/Ahri.skn .
-        /// SearchType.End returns any entries whose filepath ends with the search string.
-        /// Ie: /ezreal_tx_cm.dds would return DATA/Characters/Ezreal/Ezreal_TX_CM.dds
+        /// Specifies how to do a phrase search
         /// </summary>
         public enum RAFSearchType
         {
+            /// <summary>
+            /// Returns any entries whose filepath contains the search string, ie. "/ahri/" would return DATA/Characters/Ahri/Ahri.skn
+            /// </summary>
             All,
+            /// <summary>
+            /// Returns any entries whose filepath ends with the search string, ie. "/ezreal_tx_cm.dds" would return DATA/Characters/Ezreal/Ezreal_TX_CM.dds
+            /// </summary>
             End
         }
 

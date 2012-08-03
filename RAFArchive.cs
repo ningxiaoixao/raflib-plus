@@ -46,30 +46,23 @@ namespace RAFlibPlus
     public class RAFArchive
     {
         private string rafPath = "";
-        /// <summary>
-        /// Magic value used to identify the file type, must be 0x18BE0EF0
-        /// </summary>
+
+        // Magic value used to identify the file type, must be 0x18BE0EF0
         private UInt32 magic = 0;
-        /// <summary>
-        /// // Version of the archive format, must be 1
-        /// </summary>
+
+        // Version of the archive format, must be 1
         private UInt32 version = 0;
-        /// <summary>
-        /// An index that is used by the runtime, do not modify
-        /// Have no idea what this really does, at the moment...
-        /// </summary>
+
+        // An index of the filetype. Don't modify this
         private UInt32 mgrIndex = 0;
 
         // Byte array to hold the contents of the .raf file
         private byte[] content = null;
 
-        /// <summary>
-        /// Dictionary with the full path of the RAF entry as the key
-        /// </summary>
+        // Dictionary with the full path of the RAF entry as the key
         private Dictionary<String, RAFFileListEntry> fileDictFull = null;
-        /// <summary>
-        /// Dictionary with just the file name as the key
-        /// </summary>
+
+        // Dictionary with just the file name as the key
         private Dictionary<String, List<RAFFileListEntry>> fileDictShort = null;
 
         /// <summary>
@@ -159,14 +152,17 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// SearchType.All returns any entries whose filepath contains the search string.
-        /// Ie: /ahri/ would return DATA/Characters/Ahri/Ahri.skn .
-        /// SearchType.End returns any entries whose filepath ends with the search string.
-        /// Ie: /ezreal_tx_cm.dds would return DATA/Characters/Ezreal/Ezreal_TX_CM.dds
+        /// Specifies how to do a phrase search
         /// </summary>
         public enum RAFSearchType
         {
+            /// <summary>
+            /// Returns any entries whose filepath contains the search string, ie. "/ahri/" would return DATA/Characters/Ahri/Ahri.skn
+            /// </summary>
             All,
+            /// <summary>
+            /// Returns any entries whose filepath ends with the search string, ie. "/ezreal_tx_cm.dds" would return DATA/Characters/Ezreal/Ezreal_TX_CM.dds
+            /// </summary>
             End
         }
 
@@ -293,8 +289,12 @@ namespace RAFlibPlus
 
         /// <summary>
         /// Replace the content of the RAFFileListEntry and update memory of this new data.
-        /// You HAVE to call &lt;RAFArchive&gt;.SaveRAFFile() after you finish all the inserts. 
+        /// You HAVE to call &lt;RAFArchive&gt;.SaveRAFFile() after you finish all the inserts.
         /// </summary>
+        /// <param name="fileName">Full path of the RAFFileListEntry, ie. DATA/Characters/Ahri/Ahri.skn</param>
+        /// <param name="content">Content to overwrite the previous file data</param>
+        /// <param name="createNewIfNoExist">Should a new RAFFileListEntry be created if a RAFFileListEntry can't be found with the given fileName</param>
+        /// <returns></returns>
         public bool InsertFile(string fileName, byte[] content, bool createNewIfNoExist = false)
         {
             // Open the .dat file
@@ -310,8 +310,13 @@ namespace RAFlibPlus
 
         /// <summary>
         /// Replace the content of the RAFFileListEntry and update memory of this new data.
-        /// You HAVE to call &lt;RAFArchive&gt;.SaveRAFFile() after you finish all the inserts. 
+        /// You HAVE to call &lt;RAFArchive&gt;.SaveRAFFile() after you finish all the inserts.
         /// </summary>
+        /// <param name="fileName">Full path of the RAFFileListEntry, ie. DATA/Characters/Ahri/Ahri.skn</param>
+        /// <param name="content">Content to overwrite the previous file data</param>
+        /// <param name="datFileStream">FileStream to the RAF .dat file</param>
+        /// <param name="createNewIfNoExist">Should a new RAFFileListEntry be created if a RAFFileListEntry can't be found with the given fileName</param>
+        /// <returns></returns>
         public bool InsertFile(string fileName, byte[] content, FileStream datFileStream, bool createNewIfNoExist = false)
         {
             return insertFileHelperFunc(fileName, content, datFileStream, createNewIfNoExist);
