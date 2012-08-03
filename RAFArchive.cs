@@ -23,7 +23,7 @@
  * inject files from the League of Legends game files.
  * http://www.leagueoflegends.com 
  * 
- * This class is a modification of the orignal 
+ * This class is a modification of the original 
  * RAFlib generously created and provided by ItzWarty
  * and found here http://code.google.com/p/raf-manager/source/browse/#svn%2FProjects%2FRAFLib
 */
@@ -40,6 +40,9 @@ using System.Globalization;
 
 namespace RAFlibPlus
 {
+    /// <summary>
+    /// A class that allows the easy manipulation of RAF archives
+    /// </summary>
     public class RAFArchive
     {
         private string rafPath = "";
@@ -69,7 +72,10 @@ namespace RAFlibPlus
         /// </summary>
         private Dictionary<String, List<RAFFileListEntry>> fileDictShort = null;
 
-        // Constructor
+        /// <summary>
+        /// A class that allows the easy manipulation of RAF archives
+        /// </summary>
+        /// <param name="rafPath">Path to the .raf file</param>
         public RAFArchive(string rafPath)
         {
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
@@ -96,8 +102,7 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// Returns what i'm calling the ID of an archive, though it's probably related to LoL versioning.
-        /// IE: 0.0.0.25, 0.0.0.26
+        /// Returns what i'm calling the ID of an archive. It is the name of the folder that holds the .raf and .dat files, ie. 0.0.0.25
         /// </summary>
         /// <returns></returns>
         public string GetID()
@@ -105,6 +110,9 @@ namespace RAFlibPlus
             return new FileInfo(this.rafPath).Directory.Name;
         }
 
+        /// <summary>
+        /// Returns the local path to the .raf file, ie. C:\Archive_114252416.raf
+        /// </summary>
         public string RAFFilePath
         {
             get
@@ -136,6 +144,11 @@ namespace RAFlibPlus
             }
         }
 
+        /// <summary>
+        /// Looks up the path in the RAFFileListEntry dictionary. The path must be exact. Use SearchFileEntries for partial paths
+        /// </summary>
+        /// <param name="fullPath">Full RAFFileListEntry path, ie, DATA/Characters/Ahri/Ahri.skn (case insensitive)</param>
+        /// <returns></returns>
         public RAFFileListEntry GetFileEntry(string fullPath)
         {
             string lowerPath = fullPath.ToLower();
@@ -145,12 +158,21 @@ namespace RAFlibPlus
                 return null;
         }
 
+        /// <summary>
+        /// SearchType.All returns any entries whose filepath contains the search string.
+        /// Ie: /ahri/ would return DATA/Characters/Ahri/Ahri.skn .
+        /// SearchType.End returns any entries whose filepath ends with the search string.
+        /// Ie: /ezreal_tx_cm.dds would return DATA/Characters/Ezreal/Ezreal_TX_CM.dds
+        /// </summary>
         public enum RAFSearchType
         {
             All,
             End
         }
 
+        /// <summary>
+        /// Returns the file dictionary which uses the full-path, (lower-cased) file names as keys, ie. "data/characters/ahri/ahri.skn"
+        /// </summary>
         public Dictionary<String, RAFFileListEntry> FileDictFull
         {
             get
@@ -159,6 +181,9 @@ namespace RAFlibPlus
             }
         }
 
+        /// <summary>
+        /// Returns the file dictionary which uses the (lower-cased) file names as keys, ie. "ahri.skn". The values are List&lt;RAFFileListEntry&gt; to accomidate collisions
+        /// </summary>
         public Dictionary<String, List<RAFFileListEntry>> FileDictShort
         {
             get
@@ -168,13 +193,9 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// Finds file entries.
-        /// 
-        /// Returns any entries whose filepath contains the search string.
-        /// Ie: ahri would return /DATA/Characters/Ahri/Ahri.skn .
+        /// Returns any entries whose filepath contains the search string, ie: ahri would return DATA/Characters/Ahri/Ahri.skn.
         /// </summary>
-        /// <param name="path">Path to </param>
-        /// <returns></returns>
+        /// <param name="searchPhrase">The phrase to look for</param>
         public List<RAFFileListEntry> SearchFileEntries(string searchPhrase)
         {
             RAFSearchType searchType = RAFSearchType.All;
@@ -197,20 +218,12 @@ namespace RAFlibPlus
             return result;
         }
 
-        public struct RAFSearchResult
-        {
-            public int searchPhraseIndex;
-            public RAFFileListEntry value;
-        }
-
         /// <summary>
-        /// Finds file entries.
-        /// 
-        /// SearchType.All returns any entries whose filepath contains the search string.
-        /// Ie: /ahri/ would return /DATA/Characters/Ahri/Ahri.skn .
-        /// SearchType.End returns any entries whose filepath ends with the search string.
-        /// Ie: /ezreal_tx_cm.dds would return /DATA/Characters/Ezreal/Ezreal_TX_CM.dds
+        /// Returns any entries whose filepath contains the search string. Use the RAFSearchType to specify how to search
         /// </summary>
+        /// <param name="searchPhrase">The phrase to look for</param>
+        /// <param name="searchType">SearchType.All returns any entries whose filepath contains the search string. SearchType.End returns any entries whose filepath ends with the search string.</param>
+        /// <returns></returns>
         public List<RAFFileListEntry> SearchFileEntries(String searchPhrase, RAFSearchType searchType)
         {
             string lowerPhrase = searchPhrase.ToLower();
@@ -231,10 +244,18 @@ namespace RAFlibPlus
             return results;
         }
 
+        public struct RAFSearchResult
+        {
+            public int searchPhraseIndex;
+            public RAFFileListEntry value;
+        }
+
         /// <summary>
-        /// Overloaded for simultaneous multiple searches.
-        /// Returns a struct with the found RAFFileListEntry and the index of the search phrase that triggered it.
+        /// Simultaneously search for entries whose filepath contain a search phrase. Use the RAFSearchType to specify how to search
         /// </summary>
+        /// <param name="searchPhrases">Array of phrases to look for</param>
+        /// <param name="searchType">SearchType.All returns any entries whose filepath contains the search string. SearchType.End returns any entries whose filepath ends with the search string.</param>
+        /// <returns>A struct with the found RAFFileListEntry and the index of the search phrase that triggered it</returns>
         public List<RAFSearchResult> SearchFileEntries(String[] searchPhrases, RAFSearchType searchType)
         {
             List<RAFSearchResult> results = new List<RAFSearchResult>();
@@ -271,10 +292,8 @@ namespace RAFlibPlus
         #region RAF Editing
 
         /// <summary>
-        /// Insert a file into the .dat and updates memory of the new location. 
-        /// You HAVE to rebuild the .raf file after you finish all the inserts. 
-        /// If you are inserting lots of files, supply a FileStream to the .dat file to increase performance. 
-        /// Just remember to close the stream after all the inserts.
+        /// Replace the content of the RAFFileListEntry and update memory of this new data.
+        /// You HAVE to call &lt;RAFArchive&gt;.SaveRAFFile() after you finish all the inserts. 
         /// </summary>
         public bool InsertFile(string fileName, byte[] content, bool createNewIfNoExist = false)
         {
@@ -290,10 +309,8 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// Insert a file into the .dat and updates memory of the new location. 
-        /// You HAVE to rebuild the .raf file after you finish all the inserts. 
-        /// If you are inserting many files, supply a FileStream to the .dat file to increase performance. 
-        /// Just remember to close the stream after all the inserts.
+        /// Replace the content of the RAFFileListEntry and update memory of this new data.
+        /// You HAVE to call &lt;RAFArchive&gt;.SaveRAFFile() after you finish all the inserts. 
         /// </summary>
         public bool InsertFile(string fileName, byte[] content, FileStream datFileStream, bool createNewIfNoExist = false)
         {
@@ -332,6 +349,9 @@ namespace RAFlibPlus
             return result;
         }
 
+        /// <summary>
+        /// Rebuilds the .dat file. This is neccessary after any file inserting. 
+        /// </summary>
         public void SaveRAFFile()
         {
             //Calls to bitconverter were avoided until the end... just to make code prettier

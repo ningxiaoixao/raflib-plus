@@ -23,7 +23,7 @@
  * inject files from the League of Legends game files.
  * http://www.leagueoflegends.com 
  * 
- * This class is a modification of the orignal 
+ * This class is a modification of the original 
  * RAFlib generously created and provided by ItzWarty
  * and found here http://code.google.com/p/raf-manager/source/browse/#svn%2FProjects%2FRAFLib
 */
@@ -40,6 +40,9 @@ using System.Globalization;
 
 namespace RAFlibPlus
 {
+    /// <summary>
+    /// A class that represents a file within an RAF archive
+    /// </summary>
     public class RAFFileListEntry
     {
         private RAFArchive raf = null;
@@ -48,7 +51,13 @@ namespace RAFlibPlus
         private UInt32 fileSize = UInt32.MaxValue;
         private string fileName = null;
 
-        // Main constructor
+        /// <summary>
+        /// A class that represents a file within an RAF archive
+        /// </summary>
+        /// <param name="raf">Pointer to the owning RAFArchive</param>
+        /// <param name="directoryFileContent">Pointer to the content of the .raf.dat file</param>
+        /// <param name="offsetDirectoryEntry">Offset to where the entry data offsets begin</param>
+        /// <param name="offsetStringTable">Offset to the entry's file name</param>
         public RAFFileListEntry(RAFArchive raf, ref byte[] directoryFileContent, UInt32 offsetDirectoryEntry, UInt32 offsetStringTable)
         {
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
@@ -83,8 +92,6 @@ namespace RAFlibPlus
 
         /// <summary>
         /// Returns the content of the actual file (extracts from raf archive)
-        /// If you are extracting lots of files, supply a FileStream to the .dat file to increase performance. 
-        /// Just remember to close the stream after all the extractions
         /// </summary>
         public byte[] GetContent()
         {
@@ -97,10 +104,9 @@ namespace RAFlibPlus
 
             return content;
         }
+
         /// <summary>
         /// Returns the content of the actual file (extracts from raf archive)
-        /// If you are extracting lots of files, supply a FileStream to the .dat file to increase performance. 
-        /// Just remember to close the stream after all the extractions
         /// </summary>
         public byte[] GetContent(FileStream fStream)
         {
@@ -220,10 +226,8 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// Replace the content of the RAFFileListEntry and update memory of this new data 
-        /// You HAVE to rebuild the .raf file after you finish all the inserts. 
-        /// If you are inserting many files, supply a FileStream to the .dat file to increase performance. 
-        /// Just remember to close the stream after all the inserts.
+        /// Replace the content of the RAFFileListEntry and update memory of this new data.
+        /// You HAVE to call &lt;RAFArchive&gt;.SaveRAFFile() after you finish all the inserts. 
         /// </summary>
         public bool ReplaceContent(byte[] content)
         {
@@ -239,10 +243,8 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// Replace the content of the RAFFileListEntry and update memory of this new data 
-        /// You HAVE to rebuild the .raf file after you finish all the inserts. 
-        /// If you are inserting many files, supply a FileStream to the .dat file to increase performance. 
-        /// Just remember to close the stream after all the inserts.
+        /// Replace the content of the RAFFileListEntry and update memory of this new data.
+        /// You HAVE to call &lt;RAFArchive&gt;.SaveRAFFile() after you finish all the inserts. 
         /// </summary>
         public bool ReplaceContent(byte[] content, FileStream datFileStream)
         {

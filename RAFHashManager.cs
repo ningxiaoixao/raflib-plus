@@ -23,7 +23,7 @@
  * inject files from the League of Legends game files.
  * http://www.leagueoflegends.com 
  * 
- * This class is a modification of the orignal 
+ * This class is a modification of the original 
  * RAFlib generously created and provided by ItzWarty
  * and found here http://code.google.com/p/raf-manager/source/browse/#svn%2FProjects%2FRAFLib
 */
@@ -68,17 +68,17 @@ namespace RAFlibPlus
              */
             UInt32 hash = 0;
             UInt32 temp = 0;
-            for(int i = 0; i < s.Length; i++)
+            for (int i = 0; i < s.Length; i++)
             {
                 hash = (hash << 4) + s.ToLower()[i];
-                if(0 != (temp = (hash & 0xF0000000)))
+                if (0 != (temp = (hash & 0xF0000000)))
                 {
                     hash = hash ^ (temp >> 24);
                     hash = hash ^ temp;
                 }
             }
             //Console.WriteLine("!");
-            
+
             //Console.WriteLine("Hash expected: " + hashes[s]);
             //Console.WriteLine("Hash Calculated: " + hash);
             return hash;
