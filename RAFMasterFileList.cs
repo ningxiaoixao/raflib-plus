@@ -187,7 +187,7 @@ namespace RAFlibPlus
 
         public struct RAFSearchResult
         {
-            public int searchPhraseIndex;
+            public String searchPhrase;
             public RAFFileListEntry value;
         }
 
@@ -196,7 +196,7 @@ namespace RAFlibPlus
         /// </summary>
         /// <param name="searchPhrases">Array of phrases to look for</param>
         /// <param name="searchType">SearchType.All returns any entries whose filepath contains the search string. SearchType.End returns any entries whose filepath ends with the search string.</param>
-        /// <returns>A struct with the found RAFFileListEntry and the index of the search phrase that triggered it</returns>
+        /// <returns>A struct with the found RAFFileListEntry and the search phrase that triggered it</returns>
         public List<RAFSearchResult> SearchFileEntries(String[] searchPhrases, RAFSearchType searchType)
         {
             List<RAFSearchResult> results = new List<RAFSearchResult>();
@@ -204,13 +204,13 @@ namespace RAFlibPlus
             foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDictFull)
             {
                 string lowerFilename = entryKVP.Value.FileName.ToLower();
-                for (int i = 0; i < searchPhrases.Length; i++)
+                foreach(String phrase in searchPhrases)
                 {
-                    String lowerPhrase = searchPhrases[i].ToLower();
+                    String lowerPhrase = phrase.ToLower();
                     if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
                     {
                         RAFSearchResult result;
-                        result.searchPhraseIndex = i;
+                        result.searchPhrase = phrase;
                         result.value = entryKVP.Value;
                         results.Add(result);
                         break;
@@ -218,7 +218,7 @@ namespace RAFlibPlus
                     else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
                     {
                         RAFSearchResult result;
-                        result.searchPhraseIndex = i;
+                        result.searchPhrase = phrase;
                         result.value = entryKVP.Value;
                         results.Add(result);
                         break;
