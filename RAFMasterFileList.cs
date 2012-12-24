@@ -41,7 +41,7 @@ namespace RAFlibPlus
     /// </summary>
     public class RAFMasterFileList
     {
-        private Dictionary<String, RAFFileListEntry> fileDictFull = new Dictionary<String, RAFFileListEntry>();
+        private Dictionary<String, List<RAFFileListEntry>> fileDictFull = new Dictionary<String, List<RAFFileListEntry>>();
         private Dictionary<String, List<RAFFileListEntry>> fileDictShort = new Dictionary<String, List<RAFFileListEntry>>();
 
         /// <summary>
@@ -56,8 +56,8 @@ namespace RAFlibPlus
             {
                 RAFArchive raf = new RAFArchive(path);
 
-                fileDictFull = combineFileDicts(fileDictFull, raf.FileDictFull);
-                fileDictShort = combineFileDicts(fileDictShort, raf.FileDictShort);
+                fileDictFull = CombineFileDicts(fileDictFull, raf.FileDictFull);
+                fileDictShort = CombineFileDicts(fileDictShort, raf.FileDictShort);
             }
         }
 
@@ -71,8 +71,8 @@ namespace RAFlibPlus
             {
                 RAFArchive raf = new RAFArchive(path);
 
-                fileDictFull = combineFileDicts(fileDictFull, raf.FileDictFull);
-                fileDictShort = combineFileDicts(fileDictShort, raf.FileDictShort);
+                fileDictFull = CombineFileDicts(fileDictFull, raf.FileDictFull);
+                fileDictShort = CombineFileDicts(fileDictShort, raf.FileDictShort);
             }
         }
 
@@ -83,19 +83,18 @@ namespace RAFlibPlus
         /// </summary>
         /// <param name="fullPath">Full RAFFileListEntry path, ie, DATA/Characters/Ahri/Ahri.skn (case insensitive)</param>
         /// <returns></returns>
-        public RAFFileListEntry GetFileEntry(string fullPath)
+        public List<RAFFileListEntry> GetFileEntry(string fullPath)
         {
             string lowerPath = fullPath.ToLower();
-            if (this.fileDictFull.ContainsKey(lowerPath))
-                return fileDictFull[lowerPath];
-            else
-                return null;
+            List<RAFFileListEntry> returnValue;
+            fileDictFull.TryGetValue(lowerPath, out returnValue);
+            return returnValue;
         }
 
         /// <summary>
         /// Returns the file dictionary which uses the full-path (lower-cased) file names as keys, ie. "data/characters/ahri/ahri.skn"
         /// </summary>
-        public Dictionary<String, RAFFileListEntry> FileDictFull
+        public Dictionary<String, List<RAFFileListEntry>> FileDictFull
         {
             get
             {
@@ -144,16 +143,19 @@ namespace RAFlibPlus
             string lowerPhrase = searchPhrase.ToLower();
             List<RAFFileListEntry> result = new List<RAFFileListEntry>();
 
-            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDictFull)
+            foreach (KeyValuePair<String, List<RAFFileListEntry>> entryKVP in this.fileDictFull)
             {
-                string lowerFilename = entryKVP.Value.FileName.ToLower();
-                if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
+                foreach (RAFFileListEntry entry in entryKVP.Value)
                 {
-                    result.Add(entryKVP.Value);
-                }
-                else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
-                {
-                    result.Add(entryKVP.Value);
+                    string lowerFilename = entry.FileName.ToLower();
+                    if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
+                    {
+                        result.Add(entry);
+                    }
+                    else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
+                    {
+                        result.Add(entry);
+                    }
                 }
             }
             return result;
@@ -170,16 +172,19 @@ namespace RAFlibPlus
             string lowerPhrase = searchPhrase.ToLower();
             List<RAFFileListEntry> results = new List<RAFFileListEntry>();
 
-            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDictFull)
+            foreach (KeyValuePair<String, List<RAFFileListEntry>> entryKVP in this.fileDictFull)
             {
-                String lowerFilename = entryKVP.Value.FileName.ToLower();
-                if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
+                foreach (RAFFileListEntry entry in entryKVP.Value)
                 {
-                    results.Add(entryKVP.Value);
-                }
-                else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
-                {
-                    results.Add(entryKVP.Value);
+                    String lowerFilename = entry.FileName.ToLower();
+                    if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
+                    {
+                        results.Add(entry);
+                    }
+                    else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
+                    {
+                        results.Add(entry);
+                    }
                 }
             }
             return results;
@@ -201,27 +206,30 @@ namespace RAFlibPlus
         {
             List<RAFSearchResult> results = new List<RAFSearchResult>();
 
-            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDictFull)
+            foreach (KeyValuePair<String, List<RAFFileListEntry>> entryKVP in this.fileDictFull)
             {
-                string lowerFilename = entryKVP.Value.FileName.ToLower();
-                foreach(String phrase in searchPhrases)
+                foreach (RAFFileListEntry entry in entryKVP.Value)
                 {
-                    String lowerPhrase = phrase.ToLower();
-                    if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
+                    string lowerFilename = entry.FileName.ToLower();
+                    foreach (String phrase in searchPhrases)
                     {
-                        RAFSearchResult result;
-                        result.searchPhrase = phrase;
-                        result.value = entryKVP.Value;
-                        results.Add(result);
-                        break;
-                    }
-                    else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
-                    {
-                        RAFSearchResult result;
-                        result.searchPhrase = phrase;
-                        result.value = entryKVP.Value;
-                        results.Add(result);
-                        break;
+                        String lowerPhrase = phrase.ToLower();
+                        if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
+                        {
+                            RAFSearchResult result;
+                            result.searchPhrase = phrase;
+                            result.value = entry;
+                            results.Add(result);
+                            break;
+                        }
+                        else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
+                        {
+                            RAFSearchResult result;
+                            result.searchPhrase = phrase;
+                            result.value = entry;
+                            results.Add(result);
+                            break;
+                        }
                     }
                 }
             }
@@ -253,47 +261,33 @@ namespace RAFlibPlus
             return returnFiles;
         }
 
-        // Combines two Full dictionaries. On collision it uses the RAFFileListEntry whos RAFArchive is more recent
-        private Dictionary<String, RAFFileListEntry> combineFileDicts(Dictionary<String, RAFFileListEntry> Dict1, Dictionary<String, RAFFileListEntry> Dict2)
+        // Add Full dictionary to MasterFileList dict
+        private static Dictionary<String, List<RAFFileListEntry>> CombineFileDicts(Dictionary<String, List<RAFFileListEntry>> Dict1, Dictionary<String, RAFFileListEntry> Dict2)
         {
             foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in Dict2)
             {
                 if (!Dict1.ContainsKey(entryKVP.Key))
-                    Dict1.Add(entryKVP.Key, entryKVP.Value);
+                    Dict1.Add(entryKVP.Key, new List<RAFFileListEntry> { entryKVP.Value });
                 else
                 {
-                    if (Convert.ToInt32(entryKVP.Value.RAFArchive.GetID().Replace(".", "")) > Convert.ToInt32(Dict1[entryKVP.Key].RAFArchive.GetID().Replace(".", "")))
-                        Dict1[entryKVP.Key] = entryKVP.Value;
+                    Dict1[entryKVP.Key].Add(entryKVP.Value);
                 }
             }
             return Dict1;
         }
 
-        // Combines two Short dictionaries. On collision it uses the RAFFileListEntry whos RAFArchive is more recent
-        private Dictionary<String, List<RAFFileListEntry>> combineFileDicts(Dictionary<String, List<RAFFileListEntry>> Dict1, Dictionary<String, List<RAFFileListEntry>> Dict2)
+        // Add Short dictionary to MasterFileList dict
+        private static Dictionary<String, List<RAFFileListEntry>> CombineFileDicts(Dictionary<String, List<RAFFileListEntry>> Dict1, Dictionary<String, List<RAFFileListEntry>> Dict2)
         {
             foreach (KeyValuePair<String, List<RAFFileListEntry>> entryKVP in Dict2)
             {
                 if (!Dict1.ContainsKey(entryKVP.Key))
-                    Dict1.Add(entryKVP.Key, entryKVP.Value);
+                    Dict1.Add(entryKVP.Key, new List<RAFFileListEntry>(entryKVP.Value));
                 else
                 {
-                    for (int i = 0; i < entryKVP.Value.Count; i++)
+                    foreach (RAFFileListEntry entry in Dict2[entryKVP.Key])
                     {
-                        Boolean conflict = false;
-                        for (int j = 0; j < Dict1[entryKVP.Key].Count; j++)
-                        {
-                            if (entryKVP.Value[i].FileName == Dict1[entryKVP.Key][j].FileName)
-                            {
-                                conflict = true;
-                                if (Convert.ToInt32(entryKVP.Value[i].RAFArchive.GetID().Replace(".", "")) > Convert.ToInt32(Dict1[entryKVP.Key][j].RAFArchive.GetID().Replace(".", "")))
-                                {
-                                    Dict1[entryKVP.Key][j] = entryKVP.Value[i];
-                                }
-                            }
-                        }
-                        if (!conflict)
-                            Dict1[entryKVP.Key].Add(entryKVP.Value[i]);
+                        Dict1[entryKVP.Key].Add(entry);
                     }
                 }
             }
