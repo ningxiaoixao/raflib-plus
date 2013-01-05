@@ -120,17 +120,6 @@ namespace RAFlibPlus
         /// <summary>
         /// Specifies how to do a phrase search
         /// </summary>
-        public enum RAFSearchType
-        {
-            /// <summary>
-            /// Returns any entries whose filepath contains the search string, ie. "/ahri/" would return DATA/Characters/Ahri/Ahri.skn
-            /// </summary>
-            All,
-            /// <summary>
-            /// Returns any entries whose filepath ends with the search string, ie. "/ezreal_tx_cm.dds" would return DATA/Characters/Ezreal/Ezreal_TX_CM.dds
-            /// </summary>
-            End
-        }
 
         /// <summary>
         /// Returns any entries whose filepath contains the search string, ie: ahri would return DATA/Characters/Ahri/Ahri.skn.
@@ -188,12 +177,6 @@ namespace RAFlibPlus
                 }
             }
             return results;
-        }
-
-        public struct RAFSearchResult
-        {
-            public String searchPhrase;
-            public RAFFileListEntry value;
         }
 
         /// <summary>
@@ -295,5 +278,23 @@ namespace RAFlibPlus
         }
 
         #endregion // Helper functions
+    }
+
+    public enum RAFSearchType
+    {
+        /// <summary>
+        /// Returns any entries whose filepath contains the search string, ie. "/ahri/" would return DATA/Characters/Ahri/Ahri.skn
+        /// </summary>
+        All,
+        /// <summary>
+        /// Returns any entries whose filepath ends with the search string, ie. "/ezreal_tx_cm.dds" would return DATA/Characters/Ezreal/Ezreal_TX_CM.dds
+        /// </summary>
+        End
+    }
+
+    public struct RAFSearchResult
+    {
+        public String searchPhrase;
+        public RAFFileListEntry value;
     }
 }
