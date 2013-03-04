@@ -1,3 +1,21 @@
+
 syntax: glob
-*bin/Debug/*
-*obj/*
+*.exe
+*/Debug/*
+*/Release/*
+*/bin/*
+*/debug/*
+*/Run Commandline/*
+*/Release_No_MT_Build/*
+*/Real_Run_Commandline/*
+bin/*
+debug/*
+*/obj/*
+*.vsp
+*.sdf
+*.ipch
+*.pdb
+*.pch
+*.dpf
+*.ilk
+_ReSharper*
