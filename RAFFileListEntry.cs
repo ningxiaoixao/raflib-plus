@@ -30,13 +30,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Globalization;
 using System.IO;
+using System.Text;
+using System.Threading;
+
 using ItzWarty;
 using zlib = ComponentAce.Compression.Libs.zlib;
-using System.Threading;
-using System.Globalization;
 
 namespace RAFlibPlus
 {

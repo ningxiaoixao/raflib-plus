@@ -30,13 +30,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-using ItzWarty;
-using zlib = ComponentAce.Compression.Libs.zlib;
-using System.Threading;
 using System.Globalization;
+using System.IO;
+using System.Text;
+using System.Threading;
+
+using ItzWarty;
 
 namespace RAFlibPlus
 {
@@ -45,25 +44,28 @@ namespace RAFlibPlus
     /// </summary>
     public class RAFArchive
     {
-        private string rafPath = "";
+        // Path to the archive
+        private string m_rafPath;
+
+        private RAFArchiveID m_id;
 
         // Magic value used to identify the file type, must be 0x18BE0EF0
-        private UInt32 magic = 0;
+        private UInt32 m_magic;
 
         // Version of the archive format, must be 1
-        private UInt32 version = 0;
+        private UInt32 m_version;
 
         // An index of the filetype. Don't modify this
-        private UInt32 mgrIndex = 0;
+        private UInt32 m_mgrIndex;
 
         // Byte array to hold the contents of the .raf file
-        private byte[] content = null;
+        private byte[] m_content;
 
         // Dictionary with the full path of the RAF entry as the key
-        private Dictionary<String, RAFFileListEntry> fileDictFull = null;
+        private Dictionary<String, RAFFileListEntry> m_fileDictFull;
 
         // Dictionary with just the file name as the key
-        private Dictionary<String, List<RAFFileListEntry>> fileDictShort = null;
+        private Dictionary<String, List<RAFFileListEntry>> m_fileDictShort;
 
         /// <summary>
         /// A class that allows the easy manipulation of RAF archives
@@ -74,33 +76,38 @@ namespace RAFlibPlus
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
             Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
 
-            this.rafPath = rafPath;
+            m_rafPath = rafPath;
+            FileInfo fi = new FileInfo(rafPath);
+            m_id = RAFArchiveID.CreateID(fi.Directory.Name);
 
-            this.content = System.IO.File.ReadAllBytes(rafPath);
-            this.magic = BitConverter.ToUInt32(content.SubArray(0, 4), 0);
-            this.version = BitConverter.ToUInt32(content.SubArray(4, 4), 0);
-            this.mgrIndex = BitConverter.ToUInt32(content.SubArray(8, 4), 0);
+            m_content = File.ReadAllBytes(rafPath);
+            m_magic = BitConverter.ToUInt32(m_content.SubArray(0, 4), 0);
+            m_version = BitConverter.ToUInt32(m_content.SubArray(4, 4), 0);
+            m_mgrIndex = BitConverter.ToUInt32(m_content.SubArray(8, 4), 0);
 
             // Offset to the table of contents from the start of the file
-            UInt32 offsetFileList = BitConverter.ToUInt32(content.SubArray(12, 4), 0);
+            UInt32 offsetFileList = BitConverter.ToUInt32(m_content.SubArray(12, 4), 0);
             // Offset to the string table from the start of the file
-            UInt32 offsetStringTable = BitConverter.ToUInt32(content.SubArray(16, 4), 0);
+            UInt32 offsetStringTable = BitConverter.ToUInt32(m_content.SubArray(16, 4), 0);
 
             //UINT32 is casted to INT32.  This should be fine, since i doubt that the RAF will become
             //a size of 2^31-1 in bytes.
 
-            this.fileDictFull = new Dictionary<String, RAFFileListEntry>();
-            this.fileDictShort = new Dictionary<String, List<RAFFileListEntry>>();
+            m_fileDictFull = new Dictionary<String, RAFFileListEntry>();
+            m_fileDictShort = new Dictionary<String, List<RAFFileListEntry>>();
             createFileDicts(this, offsetFileList, offsetStringTable);
         }
 
         /// <summary>
-        /// Returns what i'm calling the ID of an archive. It is the name of the folder that holds the .raf and .dat files, ie. 0.0.0.25
+        /// Returns the ID of an archive. It is the taken from name of the folder that holds the .raf and .dat files, ie. 0.0.0.25
         /// </summary>
-        /// <returns></returns>
-        public string GetID()
+        /// <returns>ID of the archive</returns>
+        public RAFArchiveID ID
         {
-            return new FileInfo(this.rafPath).Directory.Name;
+            get
+            {
+                return m_id;
+            }
         }
 
         /// <summary>
@@ -110,7 +117,7 @@ namespace RAFlibPlus
         {
             get
             {
-                return rafPath;
+                return m_rafPath;
             }
         }
 
@@ -119,21 +126,21 @@ namespace RAFlibPlus
         private void createFileDicts(RAFArchive raf, UInt32 offsetFileList, UInt32 offsetStringTable)
         {
             //The file list starts with a uint stating how many files we have
-            UInt32 fileListCount = BitConverter.ToUInt32(content.SubArray((Int32)offsetFileList, 4), 0);
+            UInt32 fileListCount = BitConverter.ToUInt32(m_content.SubArray((Int32)offsetFileList, 4), 0);
 
             //After the file list count, we have the actual data.
             offsetFileList += 4;
 
             for (UInt32 currentOffset = offsetFileList; currentOffset < offsetFileList + 16 * fileListCount; currentOffset += 16)
             {
-                RAFFileListEntry entry = new RAFFileListEntry(raf, ref raf.content, currentOffset, offsetStringTable);
-                raf.fileDictFull.Add(entry.FileName.ToLower(), entry);
+                RAFFileListEntry entry = new RAFFileListEntry(raf, ref raf.m_content, currentOffset, offsetStringTable);
+                raf.m_fileDictFull.Add(entry.FileName.ToLower(), entry);
 
                 FileInfo fi = new FileInfo(entry.FileName);
-                if (!raf.fileDictShort.ContainsKey(fi.Name.ToLower()))
-                    raf.fileDictShort.Add(fi.Name.ToLower(), new List<RAFFileListEntry> { entry });
+                if (!raf.m_fileDictShort.ContainsKey(fi.Name.ToLower()))
+                    raf.m_fileDictShort.Add(fi.Name.ToLower(), new List<RAFFileListEntry> { entry });
                 else
-                    raf.fileDictShort[fi.Name.ToLower()].Add(entry);
+                    raf.m_fileDictShort[fi.Name.ToLower()].Add(entry);
             }
         }
 
@@ -145,10 +152,10 @@ namespace RAFlibPlus
         public RAFFileListEntry GetFileEntry(string fullPath)
         {
             string lowerPath = fullPath.ToLower();
-            if (this.fileDictFull.ContainsKey(lowerPath))
-                return fileDictFull[lowerPath];
-            else
-                return null;
+            if (m_fileDictFull.ContainsKey(lowerPath))
+                return m_fileDictFull[lowerPath];
+
+            return null;
         }
 
         /// <summary>
@@ -158,7 +165,7 @@ namespace RAFlibPlus
         {
             get
             {
-                return this.fileDictFull;
+                return m_fileDictFull;
             }
         }
 
@@ -169,7 +176,7 @@ namespace RAFlibPlus
         {
             get
             {
-                return this.fileDictShort;
+                return m_fileDictShort;
             }
         }
 
@@ -184,7 +191,7 @@ namespace RAFlibPlus
             string lowerPhrase = searchPhrase.ToLower();
             List<RAFFileListEntry> result = new List<RAFFileListEntry>();
 
-            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDictFull)
+            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in m_fileDictFull)
             {
                 string lowerFilename = entryKVP.Value.FileName.ToLower();
                 if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
@@ -210,7 +217,7 @@ namespace RAFlibPlus
             string lowerPhrase = searchPhrase.ToLower();
             List<RAFFileListEntry> results = new List<RAFFileListEntry>();
 
-            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDictFull)
+            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in m_fileDictFull)
             {
                 String lowerFilename = entryKVP.Value.FileName.ToLower();
                 if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
@@ -235,7 +242,7 @@ namespace RAFlibPlus
         {
             List<RAFSearchResult> results = new List<RAFSearchResult>();
 
-            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in this.fileDictFull)
+            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in m_fileDictFull)
             {
                 string lowerFilename = entryKVP.Value.FileName.ToLower();
                 foreach(String phrase in searchPhrases)
@@ -249,7 +256,8 @@ namespace RAFlibPlus
                         results.Add(result);
                         break;
                     }
-                    else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
+
+                    if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
                     {
                         RAFSearchResult result;
                         result.searchPhrase = phrase;
@@ -277,7 +285,7 @@ namespace RAFlibPlus
         public bool InsertFile(string fileName, byte[] content, bool createNewIfNoExist = false)
         {
             // Open the .dat file
-            FileStream datFileStream = new FileStream(this.rafPath + ".dat", FileMode.Open);
+            FileStream datFileStream = new FileStream(m_rafPath + ".dat", FileMode.Open);
 
             bool returnVal = insertFileHelperFunc(fileName, content, datFileStream, createNewIfNoExist);
 
@@ -324,12 +332,12 @@ namespace RAFlibPlus
         private RAFFileListEntry CreateFileEntry(string rafPath, UInt32 offset, UInt32 fileSize)
         {
             RAFFileListEntry result = new RAFFileListEntry(this, rafPath, offset, fileSize);
-            this.fileDictFull.Add(result.FileName, result);
+            this.m_fileDictFull.Add(result.FileName, result);
             FileInfo fi = new FileInfo(result.FileName);
-            if (!this.fileDictShort.ContainsKey(fi.Name))
-                this.fileDictShort.Add(fi.Name, new List<RAFFileListEntry> { result });
+            if (!this.m_fileDictShort.ContainsKey(fi.Name))
+                this.m_fileDictShort.Add(fi.Name, new List<RAFFileListEntry> { result });
             else
-                this.fileDictShort[fi.Name].Add(result);
+                this.m_fileDictShort[fi.Name].Add(result);
             return result;
         }
 
@@ -339,15 +347,15 @@ namespace RAFlibPlus
         public void SaveRAFFile()
         {
             //Calls to bitconverter were avoided until the end... just to make code prettier
-            int dictLength = this.fileDictFull.Count;
+            int dictLength = this.m_fileDictFull.Count;
 
             List<UInt32> result = new List<UInt32>();
             //Header
-            result.Add(magic);
-            result.Add(version);
+            result.Add(m_magic);
+            result.Add(m_version);
 
             //Table of Contents
-            result.Add(mgrIndex);
+            result.Add(m_mgrIndex);
             result.Add(5 * 4);  //Offset of file list
             result.Add(
                 (UInt32)(
@@ -361,7 +369,7 @@ namespace RAFlibPlus
 
             {   //File List Entries
                 UInt32 i = 0;
-                foreach (KeyValuePair<String, RAFFileListEntry> entry in this.fileDictFull)
+                foreach (KeyValuePair<String, RAFFileListEntry> entry in this.m_fileDictFull)
                 {
                     result.Add(entry.Value.StringNameHash);
                     result.Add(entry.Value.FileOffset);
@@ -383,7 +391,7 @@ namespace RAFlibPlus
 
             List<byte> stringTableContent = new List<byte>();
             //Insert entry, add filename to our string name bytes
-            foreach (KeyValuePair<String, RAFFileListEntry> entry in this.fileDictFull)
+            foreach (KeyValuePair<String, RAFFileListEntry> entry in this.m_fileDictFull)
             {
                 result.Add(currentOffset); //offset to this string
                 result.Add((UInt32)entry.Value.FileName.Length + 1);
@@ -403,11 +411,170 @@ namespace RAFlibPlus
                 );
             }
             Array.Copy(stringTableContent.ToArray(), 0, resultOutput, result.Count * 4, stringTableContent.Count);
-            File.WriteAllBytes(this.rafPath, resultOutput);
+            File.WriteAllBytes(m_rafPath, resultOutput);
         }
 
         #endregion // RAF Editing
 
 
+    }
+
+    /// <summary>
+    /// Struct to hold the id number of an archive
+    /// </summary>
+    public class RAFArchiveID
+    {
+        private int m_a;
+        private int m_b;
+        private int m_c;
+        private int m_d;
+
+        public int A { get { return m_a; } }
+        public int B { get { return m_b; } }
+        public int C { get { return m_c; } }
+        public int D { get { return m_d; } }
+
+        private RAFArchiveID(int a, int b, int c, int d)
+        {
+            m_a = a;
+            m_b = b;
+            m_c = c;
+            m_d = d;
+        }
+
+        /// <summary>
+        /// Factory to create an ArchiveID object
+        /// </summary>
+        /// <param name="inputStr">Input string to be parsed into an ID. Should follow the pattern: 'A.B.C.D' If less arguments are present, ie. 'A.B', they will be assumed to be the highest order</param>
+        /// <returns>The created ArchiveID object</returns>
+        public static RAFArchiveID  CreateID(String inputStr)
+        {
+            String[] split = inputStr.Split('.');
+            if (split.Length == 1)
+            {
+                int a;
+                if (Int32.TryParse(split[0], out a))
+                {
+                    return new RAFArchiveID(a, 0, 0, 0);
+                }
+            }
+            else if (split.Length == 2)
+            {
+                int a, b;
+                if (Int32.TryParse(split[0], out a) &&
+                    Int32.TryParse(split[1], out b))
+                {
+                    return new RAFArchiveID(a, b, 0, 0);
+                }
+            }
+            else if (split.Length == 3)
+            {
+                int a, b, c;
+                if (Int32.TryParse(split[0], out a) &&
+                    Int32.TryParse(split[1], out b) &&
+                    Int32.TryParse(split[2], out c))
+                {
+                    return new RAFArchiveID(a, b, c, 0);
+                }
+            }
+            else if (split.Length == 4)
+            {
+                int a, b, c, d;
+                if (Int32.TryParse(split[0], out a) &&
+                    Int32.TryParse(split[1], out b) &&
+                    Int32.TryParse(split[2], out c) &&
+                    Int32.TryParse(split[3], out d))
+                {
+                    return new RAFArchiveID(a, b, c, d);
+                }
+            }
+
+            throw new Exception("ArchiveID construction arguments couldn't be parsed to an int");
+        }
+
+        /// <summary>
+        /// Factory to create an ArchiveID object
+        /// </summary>
+        /// /// <param name="a">The highest order number</param>
+        /// <param name="b">The second order number</param>
+        /// <param name="c">The third order number</param>
+        /// <param name="d">the lowest order number</param>
+        /// <returns>The created ArchiveID object</returns>
+        public static RAFArchiveID CreateID(int a, int b=0, int c=0, int d=0)
+        {
+            return new RAFArchiveID(a, b, c, d);
+        }
+
+        public static bool operator ==(RAFArchiveID a, RAFArchiveID b)
+        {
+            if (null == a || null == b)
+                throw new ArgumentNullException();
+
+            return a.A == b.A &&
+                   a.B == b.B &&
+                   a.C == b.C &&
+                   a.D == b.D;
+        }
+
+        public static bool operator !=(RAFArchiveID a, RAFArchiveID b)
+        {
+            if (null == a || null == b)
+                throw new ArgumentNullException();
+
+            return a.A != b.A ||
+                   a.B != b.B ||
+                   a.C != b.C ||
+                   a.D != b.D;
+        }
+
+        public static bool operator <(RAFArchiveID a, RAFArchiveID b)
+        {
+            if (null == a || null == b)
+                throw new ArgumentNullException();
+
+            // If A is less, we can quit
+            if (a.A < b.A)
+                return true;
+            // Check greater than so we can quit early
+            if (a.A > b.A)
+                return false;
+            // Equality on A, check down the line in the same fashion
+            if (a.B < b.B)
+                return true;
+            if (a.B > b.B)
+                return false;
+            if (a.C < b.C)
+                return true;
+            if (a.C > b.C)
+                return false;
+
+            return a.D < b.D;
+        }
+
+        public static bool operator >(RAFArchiveID a, RAFArchiveID b)
+        {
+            // If A is greater, we can quit
+            if (a.A > b.A)
+                return true;
+            // Check less than so we can quit early
+            if (a.A < b.A)
+                return false;
+            // Equality on A, check down the line in the same fashion
+            if (a.B > b.B)
+                return true;
+            if (a.B < b.B)
+                return false;
+            if (a.C > b.C)
+                return true;
+            if (a.C < b.C)
+                return false;
+
+            return a.D > b.D;
+        }
+
+        public override String ToString()
+        {
+            return A + "." + B + "." + C + "." + D;
+        }
     }
 }
