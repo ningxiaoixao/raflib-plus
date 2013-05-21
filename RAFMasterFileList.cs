@@ -39,8 +39,8 @@ namespace RAFlibPlus
     /// </summary>
     public class RAFMasterFileList
     {
-        private Dictionary<String, List<RAFFileListEntry>> fileDictFull = new Dictionary<String, List<RAFFileListEntry>>();
-        private Dictionary<String, List<RAFFileListEntry>> fileDictShort = new Dictionary<String, List<RAFFileListEntry>>();
+        private Dictionary<String, List<RAFFileListEntry>> m_fileDictFull = new Dictionary<String, List<RAFFileListEntry>>();
+        private Dictionary<String, List<RAFFileListEntry>> m_fileDictShort = new Dictionary<String, List<RAFFileListEntry>>();
 
         /// <summary>
         /// Allows the easy manipulation of RAF archives. With this class the user can pretend there is only one giant RAF archive
@@ -48,14 +48,14 @@ namespace RAFlibPlus
         /// <param name="fileArchivePath">The path to RADS\projects\lol_game_client\filearchives</param>
         public RAFMasterFileList(String fileArchivePath)
         {
-            List<String> rafFilePaths = getRAFFiles(fileArchivePath);
+            List<String> rafFilePaths = GetRAFFiles(fileArchivePath);
 
             foreach (String path in rafFilePaths)
             {
                 RAFArchive raf = new RAFArchive(path);
 
-                fileDictFull = CombineFileDicts(fileDictFull, raf.FileDictFull);
-                fileDictShort = CombineFileDicts(fileDictShort, raf.FileDictShort);
+                m_fileDictFull = CombineFileDicts(m_fileDictFull, raf.FileDictFull);
+                m_fileDictShort = CombineFileDicts(m_fileDictShort, raf.FileDictShort);
             }
         }
 
@@ -69,8 +69,8 @@ namespace RAFlibPlus
             {
                 RAFArchive raf = new RAFArchive(path);
 
-                fileDictFull = CombineFileDicts(fileDictFull, raf.FileDictFull);
-                fileDictShort = CombineFileDicts(fileDictShort, raf.FileDictShort);
+                m_fileDictFull = CombineFileDicts(m_fileDictFull, raf.FileDictFull);
+                m_fileDictShort = CombineFileDicts(m_fileDictShort, raf.FileDictShort);
             }
         }
 
@@ -85,7 +85,7 @@ namespace RAFlibPlus
         {
             string lowerPath = fullPath.ToLower();
             List<RAFFileListEntry> returnValue;
-            fileDictFull.TryGetValue(lowerPath, out returnValue);
+            m_fileDictFull.TryGetValue(lowerPath, out returnValue);
             return returnValue;
         }
 
@@ -96,7 +96,7 @@ namespace RAFlibPlus
         {
             get
             {
-                return this.fileDictFull;
+                return m_fileDictFull;
             }
         }
 
@@ -107,7 +107,7 @@ namespace RAFlibPlus
         {
             get
             {
-                return this.fileDictShort;
+                return m_fileDictShort;
             }
         }
 
@@ -115,38 +115,7 @@ namespace RAFlibPlus
 
         #region Searching
 
-        /// <summary>
-        /// Specifies how to do a phrase search
-        /// </summary>
-
-        /// <summary>
-        /// Returns any entries whose filepath contains the search string, ie: ahri would return DATA/Characters/Ahri/Ahri.skn.
-        /// </summary>
-        /// <param name="searchPhrase">The phrase to look for</param>
-        public List<RAFFileListEntry> SearchFileEntries(string searchPhrase)
-        {
-            RAFSearchType searchType = RAFSearchType.All;
-
-            string lowerPhrase = searchPhrase.ToLower();
-            List<RAFFileListEntry> result = new List<RAFFileListEntry>();
-
-            foreach (KeyValuePair<String, List<RAFFileListEntry>> entryKVP in this.fileDictFull)
-            {
-                foreach (RAFFileListEntry entry in entryKVP.Value)
-                {
-                    string lowerFilename = entry.FileName.ToLower();
-                    if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
-                    {
-                        result.Add(entry);
-                    }
-                    else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
-                    {
-                        result.Add(entry);
-                    }
-                }
-            }
-            return result;
-        }
+        
 
         /// <summary>
         /// Returns any entries whose filepath contains the search string. Use the RAFSearchType to specify how to search
@@ -154,12 +123,12 @@ namespace RAFlibPlus
         /// <param name="searchPhrase">The phrase to look for</param>
         /// <param name="searchType">SearchType.All returns any entries whose filepath contains the search string. SearchType.End returns any entries whose filepath ends with the search string.</param>
         /// <returns></returns>
-        public List<RAFFileListEntry> SearchFileEntries(String searchPhrase, RAFSearchType searchType)
+        public List<RAFFileListEntry> SearchFileEntries(String searchPhrase, RAFSearchType searchType = RAFSearchType.All)
         {
             string lowerPhrase = searchPhrase.ToLower();
             List<RAFFileListEntry> results = new List<RAFFileListEntry>();
 
-            foreach (KeyValuePair<String, List<RAFFileListEntry>> entryKVP in this.fileDictFull)
+            foreach (KeyValuePair<String, List<RAFFileListEntry>> entryKVP in m_fileDictFull)
             {
                 foreach (RAFFileListEntry entry in entryKVP.Value)
                 {
@@ -183,11 +152,11 @@ namespace RAFlibPlus
         /// <param name="searchPhrases">Array of phrases to look for</param>
         /// <param name="searchType">SearchType.All returns any entries whose filepath contains the search string. SearchType.End returns any entries whose filepath ends with the search string.</param>
         /// <returns>A struct with the found RAFFileListEntry and the search phrase that triggered it</returns>
-        public List<RAFSearchResult> SearchFileEntries(String[] searchPhrases, RAFSearchType searchType)
+        public List<RAFSearchResult> SearchFileEntries(String[] searchPhrases, RAFSearchType searchType = RAFSearchType.All)
         {
             List<RAFSearchResult> results = new List<RAFSearchResult>();
 
-            foreach (KeyValuePair<String, List<RAFFileListEntry>> entryKVP in this.fileDictFull)
+            foreach (KeyValuePair<String, List<RAFFileListEntry>> entryKVP in m_fileDictFull)
             {
                 foreach (RAFFileListEntry entry in entryKVP.Value)
                 {
@@ -198,19 +167,20 @@ namespace RAFlibPlus
                         if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
                         {
                             RAFSearchResult result;
-                            result.searchPhrase = phrase;
-                            result.value = entry;
+                            result.SearchPhrase = phrase;
+                            result.Value = entry;
                             results.Add(result);
                             break;
                         }
-                        else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
-                        {
-                            RAFSearchResult result;
-                            result.searchPhrase = phrase;
-                            result.value = entry;
-                            results.Add(result);
-                            break;
-                        }
+
+	                    if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
+	                    {
+		                    RAFSearchResult result;
+		                    result.SearchPhrase = phrase;
+		                    result.Value = entry;
+		                    results.Add(result);
+		                    break;
+	                    }
                     }
                 }
             }
@@ -226,7 +196,7 @@ namespace RAFlibPlus
         /// </summary>
         /// <param name="baseDir">The path to RADS\projects\lol_game_client\filearchives</param>
         /// <returns></returns>
-        public List<String> getRAFFiles(String baseDir)
+        public List<String> GetRAFFiles(String baseDir)
         {
             String[] folders = Directory.GetDirectories(baseDir);
 
@@ -236,48 +206,51 @@ namespace RAFlibPlus
             {
                 String[] files = Directory.GetFiles(folder, "*.raf", SearchOption.TopDirectoryOnly);
                 if (files.Length > 1)
-                    throw new System.InvalidOperationException("Multiple RAF files found within specific archive folder.\nPlease delete your " + baseDir + "folder and repair your client");
+                    throw new InvalidOperationException("Multiple RAF files found within specific archive folder.\nPlease delete your " + baseDir + "folder and repair your client");
                 returnFiles.AddRange(files);
             }
             return returnFiles;
         }
 
         // Add Full dictionary to MasterFileList dict
-        private static Dictionary<String, List<RAFFileListEntry>> CombineFileDicts(Dictionary<String, List<RAFFileListEntry>> Dict1, Dictionary<String, RAFFileListEntry> Dict2)
+        private static Dictionary<String, List<RAFFileListEntry>> CombineFileDicts(Dictionary<String, List<RAFFileListEntry>> dict1, Dictionary<String, RAFFileListEntry> dict2)
         {
-            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in Dict2)
+            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in dict2)
             {
-                if (!Dict1.ContainsKey(entryKVP.Key))
-                    Dict1.Add(entryKVP.Key, new List<RAFFileListEntry> { entryKVP.Value });
+                if (!dict1.ContainsKey(entryKVP.Key))
+                    dict1.Add(entryKVP.Key, new List<RAFFileListEntry> { entryKVP.Value });
                 else
                 {
-                    Dict1[entryKVP.Key].Add(entryKVP.Value);
+                    dict1[entryKVP.Key].Add(entryKVP.Value);
                 }
             }
-            return Dict1;
+            return dict1;
         }
 
         // Add Short dictionary to MasterFileList dict
-        private static Dictionary<String, List<RAFFileListEntry>> CombineFileDicts(Dictionary<String, List<RAFFileListEntry>> Dict1, Dictionary<String, List<RAFFileListEntry>> Dict2)
+        private static Dictionary<String, List<RAFFileListEntry>> CombineFileDicts(Dictionary<String, List<RAFFileListEntry>> dict1, Dictionary<String, List<RAFFileListEntry>> dict2)
         {
-            foreach (KeyValuePair<String, List<RAFFileListEntry>> entryKVP in Dict2)
+            foreach (KeyValuePair<String, List<RAFFileListEntry>> entryKVP in dict2)
             {
-                if (!Dict1.ContainsKey(entryKVP.Key))
-                    Dict1.Add(entryKVP.Key, new List<RAFFileListEntry>(entryKVP.Value));
+                if (!dict1.ContainsKey(entryKVP.Key))
+                    dict1.Add(entryKVP.Key, new List<RAFFileListEntry>(entryKVP.Value));
                 else
                 {
-                    foreach (RAFFileListEntry entry in Dict2[entryKVP.Key])
+                    foreach (RAFFileListEntry entry in dict2[entryKVP.Key])
                     {
-                        Dict1[entryKVP.Key].Add(entry);
+                        dict1[entryKVP.Key].Add(entry);
                     }
                 }
             }
-            return Dict1;
+            return dict1;
         }
 
         #endregion // Helper functions
     }
 
+	/// <summary>
+	/// Specifies how to do a phrase search
+	/// </summary>
     public enum RAFSearchType
     {
         /// <summary>
@@ -292,7 +265,7 @@ namespace RAFlibPlus
 
     public struct RAFSearchResult
     {
-        public String searchPhrase;
-        public RAFFileListEntry value;
+        public String SearchPhrase;
+        public RAFFileListEntry Value;
     }
 }

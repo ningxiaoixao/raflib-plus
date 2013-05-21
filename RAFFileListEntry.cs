@@ -45,11 +45,11 @@ namespace RAFlibPlus
     /// </summary>
     public class RAFFileListEntry
     {
-        private RAFArchive raf = null;
+        private RAFArchive m_raf;
 
-        private UInt32 fileOffset = UInt32.MaxValue;  //It is assumed that LoL archive files will never reach 4 gigs of size.
-        private UInt32 fileSize = UInt32.MaxValue;
-        private string fileName = null;
+        private UInt32 m_fileOffset = UInt32.MaxValue;  //It is assumed that LoL archive files will never reach 4 gigs of size.
+        private UInt32 m_fileSize = UInt32.MaxValue;
+        private string m_fileName;
 
         /// <summary>
         /// A class that represents a file within an RAF archive
@@ -63,10 +63,10 @@ namespace RAFlibPlus
             Thread.CurrentThread.CurrentCulture = new CultureInfo("en-US");
             Thread.CurrentThread.CurrentUICulture = new CultureInfo("en-US");
             
-            this.raf = raf;
+            m_raf = raf;
 
-            this.fileOffset = BitConverter.ToUInt32(directoryFileContent, (int)offsetDirectoryEntry + 4); ;
-            this.fileSize = BitConverter.ToUInt32(directoryFileContent, (int)offsetDirectoryEntry + 8);
+            m_fileOffset = BitConverter.ToUInt32(directoryFileContent, (int)offsetDirectoryEntry + 4);
+            m_fileSize = BitConverter.ToUInt32(directoryFileContent, (int)offsetDirectoryEntry + 8);
 
             UInt32 strIndex = BitConverter.ToUInt32(directoryFileContent, (int)offsetDirectoryEntry + 12);
             UInt32 entryOffset = offsetStringTable + 8 + strIndex * 8;
@@ -76,7 +76,7 @@ namespace RAFlibPlus
 
             byte[] stringBytes = directoryFileContent.SubArray((int)(entryValueOffset + offsetStringTable), (int)entryValueSize - 1);
 
-            this.fileName = Encoding.ASCII.GetString(stringBytes);
+            m_fileName = Encoding.ASCII.GetString(stringBytes);
         }
 
         /// <summary>
@@ -88,10 +88,10 @@ namespace RAFlibPlus
         /// <param name="fileSize">Length of the file in bytes</param>
         public RAFFileListEntry(RAFArchive raf, string fileName, UInt32 offsetDatFile, UInt32 fileSize)
         {
-            this.raf = raf;
-            this.fileName = fileName;
-            this.fileOffset = offsetDatFile;
-            this.fileSize = fileSize;
+            m_raf = raf;
+            m_fileName = fileName;
+            m_fileOffset = offsetDatFile;
+            m_fileSize = fileSize;
         }
 
         /// <summary>
@@ -100,9 +100,9 @@ namespace RAFlibPlus
         public byte[] GetContent()
         {
             // Open .dat file
-            FileStream fStream = new FileStream(this.raf.RAFFilePath + ".dat", FileMode.Open);
+            FileStream fStream = new FileStream(m_raf.RAFFilePath + ".dat", FileMode.Open);
 
-            byte[] content = getContentHelperFunc(fStream);
+            byte[] content = GetContentHelperFunc(fStream);
 
             fStream.Close();
 
@@ -116,14 +116,14 @@ namespace RAFlibPlus
         /// <returns></returns>
         public byte[] GetContent(FileStream fStream)
         {
-            return getContentHelperFunc(fStream);
+            return GetContentHelperFunc(fStream);
         }
 
-        private byte[] getContentHelperFunc(FileStream fStream)
+        private byte[] GetContentHelperFunc(FileStream fStream)
         {
-            byte[] buffer = new byte[this.FileSize];            //Will contain compressed data
-            fStream.Seek(this.FileOffset, SeekOrigin.Begin);
-            fStream.Read(buffer, 0, (int)this.FileSize);
+            byte[] buffer = new byte[FileSize];            //Will contain compressed data
+            fStream.Seek(FileOffset, SeekOrigin.Begin);
+            fStream.Read(buffer, 0, (int)FileSize);
 
             try
             {
@@ -134,7 +134,7 @@ namespace RAFlibPlus
 
                 //This could be optimized in the future by reading a block and adding it to our arraylist..
                 //which would be much faster, obviously
-                int data = 0;
+                int data;
                 while ((data = zinput.Read()) != -1)
                     dBuffer.Add((byte)data);
 
@@ -155,11 +155,11 @@ namespace RAFlibPlus
         public byte[] GetRawContent()
         {
             // Open .dat file
-            FileStream fStream = new FileStream(this.raf.RAFFilePath + ".dat", FileMode.Open);
+            FileStream fStream = new FileStream(m_raf.RAFFilePath + ".dat", FileMode.Open);
 
-            byte[] buffer = new byte[this.FileSize];            //Will contain compressed data
-            fStream.Seek(this.FileOffset, SeekOrigin.Begin);
-            fStream.Read(buffer, 0, (int)this.FileSize);
+            byte[] buffer = new byte[FileSize];            //Will contain compressed data
+            fStream.Seek(FileOffset, SeekOrigin.Begin);
+            fStream.Read(buffer, 0, (int)FileSize);
 
             fStream.Close();
 
@@ -173,11 +173,11 @@ namespace RAFlibPlus
         {
             get
             {
-                return this.fileName;
+                return m_fileName;
             }
             set
             {
-                fileName = value;
+                m_fileName = value;
             }
         }
 
@@ -188,11 +188,11 @@ namespace RAFlibPlus
         {
             get
             {
-               return fileOffset;
+               return m_fileOffset;
             }
             set
             {
-                this.fileOffset = value;
+                m_fileOffset = value;
             }
         }
         /// <summary>
@@ -202,11 +202,11 @@ namespace RAFlibPlus
         {
             get
             {
-                return fileSize;
+                return m_fileSize;
             }
             set
             {
-                fileSize = value;
+                m_fileSize = value;
             }
         }
         /// <summary>
@@ -227,7 +227,7 @@ namespace RAFlibPlus
         {
             get
             {
-                return raf;
+                return m_raf;
             }
         }
 
@@ -240,9 +240,9 @@ namespace RAFlibPlus
         public bool ReplaceContent(byte[] content)
         {
             // Open the .dat file
-            FileStream datFileStream = new FileStream(this.RAFArchive.RAFFilePath + ".dat", FileMode.Open);
+            FileStream datFileStream = new FileStream(RAFArchive.RAFFilePath + ".dat", FileMode.Open);
 
-            bool returnVal = replaceContentHelperFunc(content, datFileStream);
+            bool returnVal = ReplaceContentHelperFunc(content, datFileStream);
 
             // Close the steam since we're done with it
             datFileStream.Close();
@@ -259,15 +259,15 @@ namespace RAFlibPlus
         /// <returns></returns>
         public bool ReplaceContent(byte[] content, FileStream datFileStream)
         {
-            return replaceContentHelperFunc(content, datFileStream);
+            return ReplaceContentHelperFunc(content, datFileStream);
         }
 
-        private bool replaceContentHelperFunc(byte[] content, FileStream datFileStream)
+        private bool ReplaceContentHelperFunc(byte[] content, FileStream datFileStream)
         {
             // Store the old offsets just in case we need to perform a restore.
             // This actually isn't necessary currently, since the raf directory file is saved after packing.
-            UInt32 oldOffset = (UInt32)this.FileOffset;
-            UInt32 oldSize = (UInt32)this.FileSize;
+            UInt32 oldOffset = FileOffset;
+            UInt32 oldSize = FileSize;
 
             try
             {
@@ -275,7 +275,7 @@ namespace RAFlibPlus
                 datFileStream.Seek(0, SeekOrigin.End);
                 UInt32 offset = (UInt32)datFileStream.Length;
 
-                FileInfo fInfo = new FileInfo(fileName);
+                FileInfo fInfo = new FileInfo(m_fileName);
 
                 // .fsb, .fev, and .gfx files aren't compressed
                 byte[] finalContent;
@@ -297,15 +297,15 @@ namespace RAFlibPlus
                 datFileStream.Write(finalContent, 0, finalContent.Length);
 
                 // Update entry values to represent the new changes
-                this.FileOffset = offset;
-                this.FileSize = (UInt32)finalContent.Length;
+                FileOffset = offset;
+                FileSize = (UInt32)finalContent.Length;
 
                 return true;
             }
             catch (Exception)
             {
-                this.FileOffset = oldOffset;
-                this.FileSize = oldSize;
+                FileOffset = oldOffset;
+                FileSize = oldSize;
 
                 return false;
             }

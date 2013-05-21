@@ -95,7 +95,7 @@ namespace RAFlibPlus
 
             m_fileDictFull = new Dictionary<String, RAFFileListEntry>();
             m_fileDictShort = new Dictionary<String, List<RAFFileListEntry>>();
-            createFileDicts(this, offsetFileList, offsetStringTable);
+            CreateFileDicts(this, offsetFileList, offsetStringTable);
         }
 
         /// <summary>
@@ -123,7 +123,7 @@ namespace RAFlibPlus
 
         #region FileDict functions
 
-        private void createFileDicts(RAFArchive raf, UInt32 offsetFileList, UInt32 offsetStringTable)
+        private void CreateFileDicts(RAFArchive raf, UInt32 offsetFileList, UInt32 offsetStringTable)
         {
             //The file list starts with a uint stating how many files we have
             UInt32 fileListCount = BitConverter.ToUInt32(m_content.SubArray((Int32)offsetFileList, 4), 0);
@@ -181,38 +181,12 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// Returns any entries whose filepath contains the search string, ie: ahri would return DATA/Characters/Ahri/Ahri.skn.
-        /// </summary>
-        /// <param name="searchPhrase">The phrase to look for</param>
-        public List<RAFFileListEntry> SearchFileEntries(string searchPhrase)
-        {
-            RAFSearchType searchType = RAFSearchType.All;
-
-            string lowerPhrase = searchPhrase.ToLower();
-            List<RAFFileListEntry> result = new List<RAFFileListEntry>();
-
-            foreach (KeyValuePair<String, RAFFileListEntry> entryKVP in m_fileDictFull)
-            {
-                string lowerFilename = entryKVP.Value.FileName.ToLower();
-                if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
-                {
-                    result.Add(entryKVP.Value);
-                }
-                else if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
-                {
-                    result.Add(entryKVP.Value);
-                }
-            }
-            return result;
-        }
-
-        /// <summary>
         /// Returns any entries whose filepath contains the search string. Use the RAFSearchType to specify how to search
         /// </summary>
         /// <param name="searchPhrase">The phrase to look for</param>
         /// <param name="searchType">SearchType.All returns any entries whose filepath contains the search string. SearchType.End returns any entries whose filepath ends with the search string.</param>
         /// <returns></returns>
-        public List<RAFFileListEntry> SearchFileEntries(String searchPhrase, RAFSearchType searchType)
+        public List<RAFFileListEntry> SearchFileEntries(String searchPhrase, RAFSearchType searchType = RAFSearchType.All)
         {
             string lowerPhrase = searchPhrase.ToLower();
             List<RAFFileListEntry> results = new List<RAFFileListEntry>();
@@ -238,7 +212,7 @@ namespace RAFlibPlus
         /// <param name="searchPhrases">Array of phrases to look for</param>
         /// <param name="searchType">SearchType.All returns any entries whose filepath contains the search string. SearchType.End returns any entries whose filepath ends with the search string.</param>
         /// <returns>A struct with the found RAFFileListEntry and the search phrase that triggered it</returns>
-        public List<RAFSearchResult> SearchFileEntries(String[] searchPhrases, RAFSearchType searchType)
+        public List<RAFSearchResult> SearchFileEntries(String[] searchPhrases, RAFSearchType searchType = RAFSearchType.All)
         {
             List<RAFSearchResult> results = new List<RAFSearchResult>();
 
@@ -251,8 +225,8 @@ namespace RAFlibPlus
                     if (searchType == RAFSearchType.All && lowerFilename.Contains(lowerPhrase))
                     {
                         RAFSearchResult result;
-                        result.searchPhrase = phrase;
-                        result.value = entryKVP.Value;
+                        result.SearchPhrase = phrase;
+                        result.Value = entryKVP.Value;
                         results.Add(result);
                         break;
                     }
@@ -260,8 +234,8 @@ namespace RAFlibPlus
                     if (searchType == RAFSearchType.End && lowerFilename.EndsWith(lowerPhrase))
                     {
                         RAFSearchResult result;
-                        result.searchPhrase = phrase;
-                        result.value = entryKVP.Value;
+                        result.SearchPhrase = phrase;
+                        result.Value = entryKVP.Value;
                         results.Add(result);
                         break;
                     }
@@ -287,7 +261,7 @@ namespace RAFlibPlus
             // Open the .dat file
             FileStream datFileStream = new FileStream(m_rafPath + ".dat", FileMode.Open);
 
-            bool returnVal = insertFileHelperFunc(fileName, content, datFileStream, createNewIfNoExist);
+            bool returnVal = InsertFileHelperFunc(fileName, content, datFileStream, createNewIfNoExist);
 
             // Close the steam since we're done with it
             datFileStream.Close();
@@ -306,38 +280,39 @@ namespace RAFlibPlus
         /// <returns></returns>
         public bool InsertFile(string fileName, byte[] content, FileStream datFileStream, bool createNewIfNoExist = false)
         {
-            return insertFileHelperFunc(fileName, content, datFileStream, createNewIfNoExist);
+            return InsertFileHelperFunc(fileName, content, datFileStream, createNewIfNoExist);
         }
 
-        private bool insertFileHelperFunc(string fileName, byte[] content, FileStream datFileStream, bool createNewIfNoExist = false)
+        private bool InsertFileHelperFunc(string fileName, byte[] content, FileStream datFileStream, bool createNewIfNoExist = false)
         {
-            RAFFileListEntry fileEntry = this.GetFileEntry(fileName);
+            RAFFileListEntry fileEntry = GetFileEntry(fileName);
             // File exists in archive
             if (fileEntry != null)
             {
                 return fileEntry.ReplaceContent(content, datFileStream);
             }
-            // Create a new file if specified
-            else if (createNewIfNoExist)
-            {
-                // Create a virtual RAFFileEntry using dummy offsets and filesize
-                fileEntry = CreateFileEntry(fileName, 0, 0);
-                return fileEntry.ReplaceContent(content, datFileStream);
-            }
+            
+			// Create a new file if specified
+	        if (createNewIfNoExist)
+	        {
+		        // Create a virtual RAFFileEntry using dummy offsets and filesize
+		        fileEntry = CreateFileEntry(fileName, 0, 0);
+		        return fileEntry.ReplaceContent(content, datFileStream);
+	        }
 
-            return false;
+	        return false;
             
         }
 
         private RAFFileListEntry CreateFileEntry(string rafPath, UInt32 offset, UInt32 fileSize)
         {
             RAFFileListEntry result = new RAFFileListEntry(this, rafPath, offset, fileSize);
-            this.m_fileDictFull.Add(result.FileName, result);
+            m_fileDictFull.Add(result.FileName, result);
             FileInfo fi = new FileInfo(result.FileName);
-            if (!this.m_fileDictShort.ContainsKey(fi.Name))
-                this.m_fileDictShort.Add(fi.Name, new List<RAFFileListEntry> { result });
+            if (!m_fileDictShort.ContainsKey(fi.Name))
+                m_fileDictShort.Add(fi.Name, new List<RAFFileListEntry> { result });
             else
-                this.m_fileDictShort[fi.Name].Add(result);
+                m_fileDictShort[fi.Name].Add(result);
             return result;
         }
 
@@ -347,7 +322,7 @@ namespace RAFlibPlus
         public void SaveRAFFile()
         {
             //Calls to bitconverter were avoided until the end... just to make code prettier
-            int dictLength = this.m_fileDictFull.Count;
+            int dictLength = m_fileDictFull.Count;
 
             List<UInt32> result = new List<UInt32>();
             //Header
@@ -369,7 +344,7 @@ namespace RAFlibPlus
 
             {   //File List Entries
                 UInt32 i = 0;
-                foreach (KeyValuePair<String, RAFFileListEntry> entry in this.m_fileDictFull)
+                foreach (KeyValuePair<String, RAFFileListEntry> entry in m_fileDictFull)
                 {
                     result.Add(entry.Value.StringNameHash);
                     result.Add(entry.Value.FileOffset);
@@ -380,7 +355,7 @@ namespace RAFlibPlus
 
 
             //String table Header.
-            int stringTableHeader_SizeOffset = result.Count; //We will store this value later...
+            int stringTableHeaderSizeOffset = result.Count; //We will store this value later...
             result.Add(1337); //This value will be changed later to reflect the size of the string table
             result.Add((UInt32)dictLength);  //# strings in table
 
@@ -391,7 +366,7 @@ namespace RAFlibPlus
 
             List<byte> stringTableContent = new List<byte>();
             //Insert entry, add filename to our string name bytes
-            foreach (KeyValuePair<String, RAFFileListEntry> entry in this.m_fileDictFull)
+            foreach (KeyValuePair<String, RAFFileListEntry> entry in m_fileDictFull)
             {
                 result.Add(currentOffset); //offset to this string
                 result.Add((UInt32)entry.Value.FileName.Length + 1);
@@ -401,7 +376,7 @@ namespace RAFlibPlus
             }
 
             //Update string table header with size of all data
-            result[stringTableHeader_SizeOffset] = currentOffset;
+            result[stringTableHeaderSizeOffset] = currentOffset;
 
             byte[] resultOutput = new byte[result.Count * 4 + stringTableContent.Count];
             for (int i = 0; i < result.Count; i++)
@@ -419,162 +394,5 @@ namespace RAFlibPlus
 
     }
 
-    /// <summary>
-    /// Struct to hold the id number of an archive
-    /// </summary>
-    public class RAFArchiveID
-    {
-        private int m_a;
-        private int m_b;
-        private int m_c;
-        private int m_d;
-
-        public int A { get { return m_a; } }
-        public int B { get { return m_b; } }
-        public int C { get { return m_c; } }
-        public int D { get { return m_d; } }
-
-        private RAFArchiveID(int a, int b, int c, int d)
-        {
-            m_a = a;
-            m_b = b;
-            m_c = c;
-            m_d = d;
-        }
-
-        /// <summary>
-        /// Factory to create an ArchiveID object
-        /// </summary>
-        /// <param name="inputStr">Input string to be parsed into an ID. Should follow the pattern: 'A.B.C.D' If less arguments are present, ie. 'A.B', they will be assumed to be the highest order</param>
-        /// <returns>The created ArchiveID object</returns>
-        public static RAFArchiveID  CreateID(String inputStr)
-        {
-            String[] split = inputStr.Split('.');
-            if (split.Length == 1)
-            {
-                int a;
-                if (Int32.TryParse(split[0], out a))
-                {
-                    return new RAFArchiveID(a, 0, 0, 0);
-                }
-            }
-            else if (split.Length == 2)
-            {
-                int a, b;
-                if (Int32.TryParse(split[0], out a) &&
-                    Int32.TryParse(split[1], out b))
-                {
-                    return new RAFArchiveID(a, b, 0, 0);
-                }
-            }
-            else if (split.Length == 3)
-            {
-                int a, b, c;
-                if (Int32.TryParse(split[0], out a) &&
-                    Int32.TryParse(split[1], out b) &&
-                    Int32.TryParse(split[2], out c))
-                {
-                    return new RAFArchiveID(a, b, c, 0);
-                }
-            }
-            else if (split.Length == 4)
-            {
-                int a, b, c, d;
-                if (Int32.TryParse(split[0], out a) &&
-                    Int32.TryParse(split[1], out b) &&
-                    Int32.TryParse(split[2], out c) &&
-                    Int32.TryParse(split[3], out d))
-                {
-                    return new RAFArchiveID(a, b, c, d);
-                }
-            }
-
-            throw new Exception("ArchiveID construction arguments couldn't be parsed to an int");
-        }
-
-        /// <summary>
-        /// Factory to create an ArchiveID object
-        /// </summary>
-        /// /// <param name="a">The highest order number</param>
-        /// <param name="b">The second order number</param>
-        /// <param name="c">The third order number</param>
-        /// <param name="d">the lowest order number</param>
-        /// <returns>The created ArchiveID object</returns>
-        public static RAFArchiveID CreateID(int a, int b=0, int c=0, int d=0)
-        {
-            return new RAFArchiveID(a, b, c, d);
-        }
-
-        public static bool operator ==(RAFArchiveID a, RAFArchiveID b)
-        {
-            if (null == a || null == b)
-                throw new ArgumentNullException();
-
-            return a.A == b.A &&
-                   a.B == b.B &&
-                   a.C == b.C &&
-                   a.D == b.D;
-        }
-
-        public static bool operator !=(RAFArchiveID a, RAFArchiveID b)
-        {
-            if (null == a || null == b)
-                throw new ArgumentNullException();
-
-            return a.A != b.A ||
-                   a.B != b.B ||
-                   a.C != b.C ||
-                   a.D != b.D;
-        }
-
-        public static bool operator <(RAFArchiveID a, RAFArchiveID b)
-        {
-            if (null == a || null == b)
-                throw new ArgumentNullException();
-
-            // If A is less, we can quit
-            if (a.A < b.A)
-                return true;
-            // Check greater than so we can quit early
-            if (a.A > b.A)
-                return false;
-            // Equality on A, check down the line in the same fashion
-            if (a.B < b.B)
-                return true;
-            if (a.B > b.B)
-                return false;
-            if (a.C < b.C)
-                return true;
-            if (a.C > b.C)
-                return false;
-
-            return a.D < b.D;
-        }
-
-        public static bool operator >(RAFArchiveID a, RAFArchiveID b)
-        {
-            // If A is greater, we can quit
-            if (a.A > b.A)
-                return true;
-            // Check less than so we can quit early
-            if (a.A < b.A)
-                return false;
-            // Equality on A, check down the line in the same fashion
-            if (a.B > b.B)
-                return true;
-            if (a.B < b.B)
-                return false;
-            if (a.C > b.C)
-                return true;
-            if (a.C < b.C)
-                return false;
-
-            return a.D > b.D;
-        }
-
-        public override String ToString()
-        {
-            return A + "." + B + "." + C + "." + D;
-        }
-    }
+    
 }
