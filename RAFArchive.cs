@@ -317,7 +317,7 @@ namespace RAFlibPlus
         }
 
         /// <summary>
-        /// Rebuilds the .dat file. This is neccessary after any file inserting. 
+        /// Rebuilds the .raf file. This is neccessary after any file inserting. 
         /// </summary>
         public void SaveRAFFile()
         {
